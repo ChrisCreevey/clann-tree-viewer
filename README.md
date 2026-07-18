@@ -9,6 +9,8 @@ reroot / collapse / zoom / export entirely client-side. **Nothing is uploaded to
 a server**, so it can be hosted as a static site (e.g. GitHub Pages) or dropped
 onto any web host.
 
+You can use the deployed version to visualise trees here: [https://chriscreevey.github.io/clann-tree-viewer/](https://chriscreevey.github.io/clann-tree-viewer/).
+
 ## Features
 
 - **Formats:** Newick (`.nwk`, `.newick`, `.tree`) and NHX (`.nhx`) — including
