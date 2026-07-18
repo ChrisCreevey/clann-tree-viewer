@@ -40,6 +40,22 @@ export function mountViewer(container, initialData) {
   function depthOf(n) { let d = 0, p = n; while (p.parent) { d++; p = p.parent; } return d; }
   function maxDepth(r) { let m = 0; each(r, (n) => { if (!n.collapsed) m = Math.max(m, depthOf(n)); }); return m; }
   function curEntry() { return TREES[curIdx] || {}; }
+  // Does this tree carry meaningful (non-zero) branch lengths? If so we open in
+  // phylogram mode so the lengths are actually visible — otherwise a length-
+  // bearing tree (e.g. NJ) looks misleadingly like a cladogram.
+  function treeHasLengths(node) {
+    let found = false;
+    (function walk(n, isRoot) {
+      if (!isRoot && n.length != null && n.length > 0) found = true;
+      (n.children || []).forEach((c) => walk(c, false));
+    })(node, true);
+    return found;
+  }
+  function setLayout(v) {
+    layout = v;
+    [...$("segLayout").children].forEach((b) => b.classList.toggle("on", b.dataset.v === v));
+    $("rowScale").style.display = v === "phylo" ? "flex" : "none";
+  }
 
   // ---------- layout ----------
   function computeLayout() {
@@ -417,7 +433,8 @@ export function mountViewer(container, initialData) {
     filtered = TREES.map((_, i) => i);
     $("rowLoss").style.display = isRecon ? "flex" : "none";
     if (!isRecon) $("legend").style.display = "none";
-    $("rowScale").style.display = layout === "phylo" ? "flex" : "none";
+    // Default to phylogram when the first tree has branch lengths, cladogram otherwise.
+    setLayout(TREES.length && treeHasLengths(TREES[0].tree) ? "phylo" : "clado");
     $("rerootMode").checked = false; svg.classList.remove("reroot");
     setupNav();
     loadTree(0);
