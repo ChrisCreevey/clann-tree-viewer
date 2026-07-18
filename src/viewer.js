@@ -83,7 +83,7 @@ export function mountViewer(container, initialData) {
   // ---------- render ----------
   const el = (t, a) => { const e = document.createElementNS("http://www.w3.org/2000/svg", t); for (const k in a) e.setAttribute(k, a[k]); return e; };
   function render() {
-    computeLayout();
+    const { W, maxLen } = computeLayout();
     scene.innerHTML = "";
     const tipX = Math.max(...leaves(root).map((n) => n._x));
     each(root, (n) => {
@@ -160,11 +160,32 @@ export function mountViewer(container, initialData) {
         }
       }
     });
-    if (opt.len && layout === "phylo") {
+    if (opt.len) {
       each(root, (n) => { if (n.parent && n.length && !n.isLoss) { const t = el("text", { x: (n.parent._x + n._x) / 2, y: n._y - 3, class: "support", "text-anchor": "middle" }); t.textContent = (+n.length).toFixed(3); scene.appendChild(t); } });
+    }
+    // scale bar (phylogram only — branch x-positions are proportional there)
+    if (opt.scale && layout === "phylo" && maxLen > 0) {
+      const pxPerUnit = (W - 10) / maxLen;
+      const dist = niceNumber((W - 10) * 0.2 / pxPerUnit);
+      const barW = dist * pxPerUnit;
+      const ys = leaves(root).map((n) => n._y);
+      const yb = (ys.length ? Math.max(...ys) : 0) + vspace * 1.25;
+      const x0 = 4;
+      scene.appendChild(el("path", { d: `M${x0},${yb} H${x0 + barW}`, class: "branch" }));
+      scene.appendChild(el("path", { d: `M${x0},${yb - 4} V${yb + 4}`, class: "branch" }));
+      scene.appendChild(el("path", { d: `M${x0 + barW},${yb - 4} V${yb + 4}`, class: "branch" }));
+      const t = el("text", { x: x0 + barW / 2, y: yb + 15, class: "support", "text-anchor": "middle" });
+      t.textContent = String(dist); scene.appendChild(t);
     }
     applyView();
     drawLegend();
+  }
+  // round to the nearest 1/2/5 × 10ⁿ, for a tidy scale-bar distance
+  function niceNumber(x) {
+    if (!(x > 0)) return x;
+    const e = Math.floor(Math.log10(x)), f = x / Math.pow(10, e);
+    const nf = f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10;
+    return nf * Math.pow(10, e);
   }
   function selectBranch() { container.querySelectorAll(".branch.sel").forEach((e) => e.classList.remove("sel")); }
   function matchHL(n) { const s = (n.name || "") + " " + (n.species || ""); return [...hlSet].some((q) => s.toLowerCase().includes(q)); }
