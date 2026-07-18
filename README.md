@@ -1,6 +1,6 @@
 # Clann tree viewer
 
-A standalone, browser-only viewer for phylogenetic trees — including the
+A standalone, browser-only viewer for phylogenetic trees, including the
 **NHX** reconciliation files [Clann](https://github.com/ChrisCreevey/clann)
 produces, with their duplications, losses, and species mappings.
 
