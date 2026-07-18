@@ -1,0 +1,47 @@
+{
+  "type": "tree",
+  "meta": {
+    "dataset": "plain.nwk",
+    "source": "plain.nwk"
+  },
+  "trees": [
+    {
+      "name": "tree_1",
+      "tree": {
+        "name": "",
+        "children": [
+          {
+            "name": "",
+            "length": 0.3,
+            "support": 95,
+            "children": [
+              {
+                "name": "A",
+                "length": 0.1
+              },
+              {
+                "name": "B",
+                "length": 0.2
+              }
+            ]
+          },
+          {
+            "name": "",
+            "length": 0.6,
+            "support": 80,
+            "children": [
+              {
+                "name": "C",
+                "length": 0.4
+              },
+              {
+                "name": "D",
+                "length": 0.5
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clann tree viewer</title>
+<link rel="stylesheet" href="styles/viewer.css">
+</head>
+<body>
+<div id="viewer" style="display:flex;flex-direction:column;flex:1;min-height:0">
+  <header>
+    <span class="title" id="hTitle">Clann tree viewer</span>
+    <span id="nav">
+      <input type="search" id="treeSearch" placeholder="filter trees…" title="Filter trees by name, number, or a taxon they contain">
+      <button id="prevT" title="Previous match (←)">◀</button>
+      <select id="selT" title="Jump to tree"></select>
+      <button id="nextT" title="Next match (→)">▶</button>
+      <span class="meta" id="cntT"></span>
+    </span>
+    <span class="meta" id="hMeta"></span>
+    <span class="spacer"></span>
+    <button id="uploadBtn" title="Open a Newick or NHX tree file">Open file…</button>
+    <button class="act" style="width:auto" id="themeBtn" title="Toggle light/dark">◐</button>
+  </header>
+  <main>
+    <aside id="side">
+      <h4>Layout</h4>
+      <div class="row"><div class="seg" id="segLayout" style="flex:1">
+        <button data-v="clado" class="on">Cladogram</button><button data-v="phylo">Phylogram</button>
+      </div></div>
+      <div class="row"><label>Row spacing</label></div>
+      <input type="range" id="vspace" min="10" max="46" value="20">
+      <div class="row"><label>Font size</label></div>
+      <input type="range" id="fsize" min="8" max="20" value="12">
+
+      <h4>Show</h4>
+      <div class="row"><label for="tSupport">Support values</label><input type="checkbox" id="tSupport" checked></div>
+      <div class="row"><label for="tLen">Branch lengths</label><input type="checkbox" id="tLen"></div>
+      <div class="row"><label for="tInt">Internal labels</label><input type="checkbox" id="tInt"></div>
+      <div class="row"><label for="tAlign">Align tip labels</label><input type="checkbox" id="tAlign"></div>
+      <div class="row" id="rowLoss"><label for="tLoss">Losses</label><input type="checkbox" id="tLoss" checked></div>
+      <div class="row" id="rowScale"><label for="tScale">Scale bar</label><input type="checkbox" id="tScale" checked></div>
+
+      <h4>Find</h4>
+      <input type="search" id="find" placeholder="highlight taxa (comma-sep)…">
+
+      <h4>Edit</h4>
+      <div class="row"><label>Reroot mode</label><input type="checkbox" id="rerootMode"></div>
+      <div class="hint">Click a branch to reroot there. Click a node dot to collapse/expand.</div>
+      <button class="act" id="ladder">Ladderize ⇅</button>
+      <button class="act" id="expandAll">Expand all</button>
+      <button class="act warn" id="reset">Reset view</button>
+
+      <h4>Export</h4>
+      <button class="act" id="expSvg">Download SVG</button>
+      <button class="act" id="expPdf">Download PDF</button>
+      <button class="act" id="expNwk">Copy Newick (current rooting)</button>
+      <div class="hint" style="margin-top:10px">Scroll to zoom · drag to pan · <kbd>R</kbd> reroot toggle</div>
+    </aside>
+    <div id="wrap">
+      <svg id="svg"><g id="scene"></g></svg>
+      <div class="tip" id="tip"></div>
+      <div class="legend" id="legend"></div>
+      <div id="drop">Drop a Newick / NHX file to view</div>
+      <div id="empty">
+        <h2>Clann tree viewer</h2>
+        <div>Open a tree file to explore it — reroot, collapse, and export, all in your browser.<br>Nothing is uploaded to a server.</div>
+        <div class="exts">.nwk · .newick · .tree · .nhx · .txt</div>
+        <button id="emptyOpen">Open file…</button>
+      </div>
+      <div class="err" id="err"></div>
+    </div>
+  </main>
+</div>
+<input type="file" id="fileInput" accept=".nwk,.newick,.tree,.nhx,.txt,text/plain" style="display:none">
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

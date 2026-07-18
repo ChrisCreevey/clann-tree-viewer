@@ -1,0 +1,24 @@
+# tree_0  (score=0.0000)
+((Cat[&&NHX:S=Cat:D=N],((Mouse[&&NHX:S=Mouse:D=N],Rat[&&NHX:S=Rat:D=N])[&&NHX:D=N],((((Human[&&NHX:S=Human:D=N],Chimp[&&NHX:S=Chimp:D=N])[&&NHX:D=N],Gorilla[&&NHX:S=Gorilla:D=N])[&&NHX:D=N],Orangutan[&&NHX:S=Orangutan:D=N])[&&NHX:D=N],Macaque[&&NHX:S=Macaque:D=N])[&&NHX:D=N])[&&NHX:D=N])[&&NHX:D=N],Dog[&&NHX:S=Dog:D=N]);
+
+# tree_1  (score=1.0000)
+((Cat[&&NHX:S=Cat:D=N],((Mouse[&&NHX:S=Mouse:D=N],Rat[&&NHX:S=Rat:D=N])[&&NHX:D=N],(Macaque*LOST[&&NHX:S=Macaque],(((Human[&&NHX:S=Human:D=N],Chimp[&&NHX:S=Chimp:D=N])[&&NHX:D=N],Gorilla[&&NHX:S=Gorilla:D=N])[&&NHX:D=N],Orangutan[&&NHX:S=Orangutan:D=N])[&&NHX:D=N])[&&NHX:D=N])[&&NHX:D=N])[&&NHX:D=N],Dog[&&NHX:S=Dog:D=N]);
+
+# tree_2  (score=0.0000)
+(((((Human[&&NHX:S=Human:D=N],Chimp[&&NHX:S=Chimp:D=N])[&&NHX:D=N],Gorilla[&&NHX:S=Gorilla:D=N])[&&NHX:D=N],Orangutan[&&NHX:S=Orangutan:D=N])[&&NHX:D=N],Macaque[&&NHX:S=Macaque:D=N])[&&NHX:D=N],(Mouse[&&NHX:S=Mouse:D=N],Rat[&&NHX:S=Rat:D=N])[&&NHX:D=N]);
+
+# tree_3  (score=2.0000)
+(((((Human.alpha[&&NHX:S=Human:D=N],Human.beta[&&NHX:S=Human:D=N])[&&NHX:D=Y:S=Human],(Chimp.a[&&NHX:S=Chimp:D=N],Chimp.b[&&NHX:S=Chimp:D=N])[&&NHX:D=Y:S=Chimp])[&&NHX:D=N],Gorilla[&&NHX:S=Gorilla:D=N])[&&NHX:D=N],Orangutan[&&NHX:S=Orangutan:D=N])[&&NHX:D=N],Macaque[&&NHX:S=Macaque:D=N]);
+
+# tree_4  (score=7.0000)
+((Macaque*LOST[&&NHX:S=Macaque],(Orangutan*LOST[&&NHX:S=Orangutan],(((Human.x[&&NHX:S=Human:D=N],Human.y[&&NHX:S=Human:D=N])[&&NHX:D=Y:S=Human],(Chimp.x[&&NHX:S=Chimp:D=N],Chimp.y[&&NHX:S=Chimp:D=N])[&&NHX:D=Y:S=Chimp])[&&NHX:D=N],(Gorilla.a[&&NHX:S=Gorilla:D=N],Gorilla.b[&&NHX:S=Gorilla:D=N])[&&NHX:D=Y:S=Gorilla])[&&NHX:D=N])[&&NHX:D=N])[&&NHX:D=N],((Mouse.a[&&NHX:S=Mouse:D=N],Mouse.b[&&NHX:S=Mouse:D=N])[&&NHX:D=Y:S=Mouse],(Rat.a[&&NHX:S=Rat:D=N],Rat.b[&&NHX:S=Rat:D=N])[&&NHX:D=Y:S=Rat])[&&NHX:D=N]);
+
+# tree_5  (score=4.0000)
+(((Gorilla.1[&&NHX:S=Gorilla:D=N],Gorilla.2[&&NHX:S=Gorilla:D=N])[&&NHX:D=Y:S=Gorilla],((Human.1[&&NHX:S=Human:D=N],Human.2[&&NHX:S=Human:D=N])[&&NHX:D=Y:S=Human],(Chimp.1[&&NHX:S=Chimp:D=N],Chimp.2[&&NHX:S=Chimp:D=N])[&&NHX:D=Y:S=Chimp])[&&NHX:D=N])[&&NHX:D=N],(Orangutan.1[&&NHX:S=Orangutan:D=N],Orangutan.2[&&NHX:S=Orangutan:D=N])[&&NHX:D=Y:S=Orangutan]);
+
+# tree_6  (score=3.0000)
+((((Gorilla*LOST[&&NHX:S=Gorilla],(Human.alpha[&&NHX:S=Human:D=N],Chimp[&&NHX:S=Chimp:D=N])[&&NHX:D=N])[&&NHX:D=N],((Human.beta[&&NHX:S=Human:D=N],Chimp*LOST[&&NHX:S=Chimp])[&&NHX:D=N],Gorilla[&&NHX:S=Gorilla:D=N])[&&NHX:D=N])[&&NHX:D=Y],Orangutan[&&NHX:S=Orangutan:D=N])[&&NHX:D=N],Macaque[&&NHX:S=Macaque:D=N]);
+
+# tree_7  (score=13.0000)
+(((Macaque*LOST[&&NHX:S=Macaque],(Orangutan*LOST[&&NHX:S=Orangutan],((Gorilla*LOST[&&NHX:S=Gorilla],(Human.a[&&NHX:S=Human:D=N],Chimp*LOST[&&NHX:S=Chimp])[&&NHX:D=N])[&&NHX:D=N],((Human*LOST[&&NHX:S=Human],Chimp[&&NHX:S=Chimp:D=N])[&&NHX:D=N],Gorilla[&&NHX:S=Gorilla:D=N])[&&NHX:D=N])[&&NHX:D=Y])[&&NHX:D=N])[&&NHX:D=N],((Macaque*LOST[&&NHX:S=Macaque],(Orangutan*LOST[&&NHX:S=Orangutan],(Gorilla*LOST[&&NHX:S=Gorilla],(Human.b[&&NHX:S=Human:D=N],Chimp*LOST[&&NHX:S=Chimp])[&&NHX:D=N])[&&NHX:D=N])[&&NHX:D=N])[&&NHX:D=N],((Orangutan[&&NHX:S=Orangutan:D=N],(Gorilla*LOST[&&NHX:S=Gorilla],(Human*LOST[&&NHX:S=Human],Chimp*LOST[&&NHX:S=Chimp])[&&NHX:D=N])[&&NHX:D=N])[&&NHX:D=N],Macaque[&&NHX:S=Macaque:D=N])[&&NHX:D=N])[&&NHX:D=Y])[&&NHX:D=Y],(Mouse[&&NHX:S=Mouse:D=N],Rat[&&NHX:S=Rat:D=N])[&&NHX:D=N]);
+

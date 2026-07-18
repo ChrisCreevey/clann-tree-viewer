@@ -1,0 +1,2 @@
+# tree_0  (score=2.0000)
+(((Human.a[&&NHX:S=Human:D=N],Human.b[&&NHX:S=Human:D=N])[&&NHX:D=Y:S=Human],Gorilla*LOST[&&NHX:S=Gorilla])[&&NHX:D=N],Mouse[&&NHX:S=Mouse:D=N]);

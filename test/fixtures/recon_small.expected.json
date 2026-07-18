@@ -1,0 +1,51 @@
+{
+  "type": "reconciliation",
+  "meta": {
+    "dataset": "recon_small.nhx",
+    "source": "recon_small.nhx",
+    "criterion": "recon"
+  },
+  "trees": [
+    {
+      "name": "tree_0",
+      "dups": 1,
+      "losses": 1,
+      "tree": {
+        "name": "",
+        "children": [
+          {
+            "name": "",
+            "event": "speciation",
+            "children": [
+              {
+                "name": "",
+                "species": "Human",
+                "event": "duplication",
+                "children": [
+                  {
+                    "name": "Human.a",
+                    "species": "Human"
+                  },
+                  {
+                    "name": "Human.b",
+                    "species": "Human"
+                  }
+                ]
+              },
+              {
+                "name": "Gorilla",
+                "species": "Gorilla",
+                "event": "loss"
+              }
+            ]
+          },
+          {
+            "name": "Mouse",
+            "species": "Mouse"
+          }
+        ]
+      },
+      "score": 2
+    }
+  ]
+}
