@@ -424,8 +424,8 @@ export function mountViewer(container, initialData) {
   $("ladder").onclick = () => { (function lad(n) { n.children.sort((a, b) => countLeaves(a) - countLeaves(b)); n.children.forEach(lad); })(root); render(); };
   $("expandAll").onclick = () => { each(root, (n) => n.collapsed = false); render(); };
   $("reset").onclick = () => loadTree(curIdx);
-  const themeBtn = $("themeBtn");
-  if (themeBtn) themeBtn.onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; };
+  // NB: the light/dark toggle is a shell-level control wired in app.js, so it
+  // works before any tree is loaded (this module only mounts once a file opens).
   $("expSvg").onclick = exportSvg;
   $("expPdf").onclick = exportPdf;
   $("expNwk").onclick = copyNewick;

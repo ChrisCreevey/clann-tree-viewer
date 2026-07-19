@@ -49,6 +49,12 @@ const pick = () => fileInput.click();
 document.getElementById("uploadBtn").addEventListener("click", pick);
 document.getElementById("emptyOpen").addEventListener("click", pick);
 
+// --- light/dark toggle (shell-level: active even before a tree is loaded) ---
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark";
+});
+
 // --- drag & drop over the canvas ---
 let dragDepth = 0;
 const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes("Files");
