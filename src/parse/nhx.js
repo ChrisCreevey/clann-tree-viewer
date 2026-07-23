@@ -46,6 +46,11 @@ export function parseNhxTags(comment) {
 export function applyNhx(rawRoot) {
   let dups = 0, losses = 0;
 
+  // visit returns { node, fullyLost }. `fullyLost` is true when every leaf at
+  // or below this node is a loss. Losses are counted per *maximal* fully-lost
+  // subtree (a whole clade lost together is a single loss event), not per lost
+  // leaf: a fully-lost child is only tallied once its parent is not itself
+  // fully lost (so the count lands on the top edge of the lost clade).
   function visit(raw) {
     const tags = parseNhxTags(raw.comment);
     const isLeaf = raw.children.length === 0;
@@ -62,22 +67,33 @@ export function applyNhx(rawRoot) {
 
     if (tags.S) node.species = tags.S;
 
-    if (isLoss) {
-      node.event = "loss";
-      losses++;
-    } else if (!isLeaf) {
+    let fullyLost;
+    if (isLeaf) {
+      if (isLoss) node.event = "loss";
+      // Non-loss leaves carry species (from S=) but no event — gene copies.
+      fullyLost = isLoss;
+    } else {
       // Only assign an event when NHX actually tells us; leaving it undefined
       // keeps plain (non-reconciled) internal nodes honest.
       if (tags.D === "Y") { node.event = "duplication"; dups++; }
       else if (tags.D === "N") node.event = "speciation";
-    }
-    // Non-loss leaves carry species (from S=) but no event — they're gene copies.
 
-    if (!isLeaf) node.children = raw.children.map(visit);
-    return node;
+      const kids = raw.children.map(visit);
+      node.children = kids.map((k) => k.node);
+      fullyLost = kids.every((k) => k.fullyLost);
+      if (!fullyLost) {
+        // Each fully-lost child under this surviving node is one loss event.
+        for (const k of kids) if (k.fullyLost) losses++;
+      }
+    }
+
+    return { node, fullyLost };
   }
 
-  return { node: visit(rawRoot), dups, losses };
+  const { node, fullyLost } = visit(rawRoot);
+  // Degenerate case: the entire tree is a lost clade — count it as one loss.
+  if (fullyLost) losses++;
+  return { node, dups, losses };
 }
 
 /**

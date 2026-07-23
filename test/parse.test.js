@@ -54,6 +54,8 @@ test("reconciled.nhx: 8 trees with expected dup/loss counts", () => {
   const trees = parseNhxForest(readFileSync(join(examples, "reconciled.nhx"), "utf8"));
   assert.equal(trees.length, 8);
   const counts = trees.map((t) => [t.name, t.dups, t.losses]);
+  // Losses count each maximal fully-lost clade once, not per lost leaf, so
+  // dups + losses reproduces each tree's header score (weights 1/1).
   assert.deepEqual(counts, [
     ["tree_0", 0, 0],
     ["tree_1", 0, 1],
@@ -62,8 +64,26 @@ test("reconciled.nhx: 8 trees with expected dup/loss counts", () => {
     ["tree_4", 5, 2],
     ["tree_5", 4, 0],
     ["tree_6", 1, 2],
-    ["tree_7", 3, 12],
+    ["tree_7", 3, 10],
   ]);
+});
+
+test("a fully-lost clade counts as a single loss", () => {
+  // Copy A loses Macaque (1); copy B loses the (Human,Chimp,Gorilla) clade
+  // together (1) and Orangutan (1) → 1 dup, 3 losses (header score 4).
+  const nhx =
+    "# tree_0  (score=4.0000)\n" +
+    "((Cat[&&NHX:S=Cat:D=N],((Mouse[&&NHX:S=Mouse:D=N],Rat[&&NHX:S=Rat:D=N])[&&NHX:D=N]," +
+    "(((((Human[&&NHX:S=Human:D=N],Chimp[&&NHX:S=Chimp:D=N])[&&NHX:D=N]," +
+    "Gorilla[&&NHX:S=Gorilla:D=N])[&&NHX:D=N],Macaque*LOST[&&NHX:S=Macaque])[&&NHX:D=N]," +
+    "Orangutan[&&NHX:S=Orangutan:D=N])[&&NHX:D=N]," +
+    "((((Human*LOST[&&NHX:S=Human],Chimp*LOST[&&NHX:S=Chimp])[&&NHX:D=N]," +
+    "Gorilla*LOST[&&NHX:S=Gorilla])[&&NHX:D=N],Macaque[&&NHX:S=Macaque:D=N])[&&NHX:D=N]," +
+    "Orangutan*LOST[&&NHX:S=Orangutan])[&&NHX:D=N])[&&NHX:D=Y])[&&NHX:D=N])[&&NHX:D=N]," +
+    "Dog[&&NHX:S=Dog:D=N]);\n";
+  const [t] = parseNhxForest(nhx);
+  assert.equal(t.dups, 1);
+  assert.equal(t.losses, 3);
 });
 
 test("loss leaf strips *LOST suffix and carries species + event", () => {
