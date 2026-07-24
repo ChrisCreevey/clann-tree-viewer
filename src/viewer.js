@@ -26,11 +26,13 @@ export function mountViewer(container, initialData) {
   let rerootOn = false, hlSet = new Set(), staleWarn = false;
   let filtered = [];
   let colorOn = false, collapseOn = false, activeColor = null, pendingCenter = false;
+  let renameMap = new Map();   // originalTipName -> displayName
   const PALETTE = ["#C56347", "#D99A2B", "#5F6E33", "#149589", "#3B6EA5", "#7A4FA3", "#B03060", "#8C6D3F"];
 
   // ---------- model ----------
   function build(n, parent) {
     n.id = ID++; n.parent = parent || null; n.collapsed = false;
+    n._orig = n.name;   // original tip name, so renames can match & revert against it
     n.children = (n.children || []).map((c) => build(c, n));
     n.isLeaf = n.children.length === 0 && n.event !== "loss";
     n.isLoss = n.event === "loss";
@@ -70,6 +72,35 @@ export function mountViewer(container, initialData) {
     })(node, true);
     return found;
   }
+  // ---------- tip renaming ----------
+  // Parse a two-column map: "current<TAB or ,>new", one pair per line. Only
+  // leading/trailing whitespace is trimmed (internal spaces are kept, since a
+  // name may legitimately contain them). Splits on the FIRST separator only.
+  function parseRenameMap(text) {
+    const m = new Map();
+    for (const raw of String(text || "").split(/\r?\n/)) {
+      if (!raw.trim()) continue;
+      const sep = raw.includes("\t") ? "\t" : ",";
+      const i = raw.indexOf(sep);
+      if (i < 0) continue;
+      const from = raw.slice(0, i).replace(/^\s+|\s+$/g, "");
+      const to = raw.slice(i + 1).replace(/^\s+|\s+$/g, "");
+      if (from && to) m.set(from, to);
+    }
+    return m;
+  }
+  // Re-apply the current rename map to the live tree (exact, case-sensitive match
+  // on the original tip name) and update the matched counter.
+  function applyRenames() {
+    if (!root) return;
+    each(root, (n) => { if (!n.children.length) n.name = renameMap.has(n._orig) ? renameMap.get(n._orig) : n._orig; });
+    const el = $("renameCount"); if (!el) return;
+    if (!renameMap.size) { el.textContent = ""; return; }
+    const present = new Set(); each(root, (n) => { if (!n.children.length) present.add(n._orig); });
+    let matched = 0; renameMap.forEach((_, k) => { if (present.has(k)) matched++; });
+    el.textContent = matched + " of " + renameMap.size + " names matched";
+  }
+
   function setLayout(v) {
     if (v === "radial" && layout !== "radial") pendingCenter = true;
     layout = v;
@@ -390,6 +421,7 @@ export function mountViewer(container, initialData) {
     if (layout === "radial") pendingCenter = true;
     if ($("supCollapse")) { $("supCollapse").value = 0; $("supVal").textContent = "0"; }
     const sel = $("selT"); if ([...sel.options].some((o) => +o.value === i)) sel.value = i;
+    applyRenames();   // re-apply the map to this freshly-built tree
     navCounter(); updateMeta(); render();
   }
   function stepTree(d) {
@@ -552,6 +584,25 @@ export function mountViewer(container, initialData) {
   chk("tSupport", "support"); chk("tLen", "len"); chk("tInt", "intl"); chk("tAlign", "align"); chk("tScale", "scale");
   $("tLoss").onchange = (e) => { showLoss = e.target.checked; render(); };
   $("find").oninput = (e) => { hlSet = new Set(e.target.value.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)); render(); centerOnMatch(); };
+
+  // ---------- rename tips ----------
+  const runRename = () => { renameMap = parseRenameMap($("renameMap").value); applyRenames(); render(); };
+  $("applyRename").onclick = runRename;
+  $("clearRename").onclick = () => { renameMap = new Map(); $("renameMap").value = ""; applyRenames(); render(); };
+  $("loadRename").onclick = () => $("renameFile").click();
+  $("renameFile").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = "";
+    if (f) { $("renameMap").value = await f.text(); runRename(); }
+  });
+  const rbox = $("renameMap");
+  rbox.addEventListener("dragover", (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { e.preventDefault(); rbox.classList.add("drop"); } });
+  rbox.addEventListener("dragleave", () => rbox.classList.remove("drop"));
+  rbox.addEventListener("drop", async (e) => {
+    if (!(e.dataTransfer && [...e.dataTransfer.types].includes("Files"))) return;
+    e.preventDefault(); e.stopPropagation(); rbox.classList.remove("drop");
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) { rbox.value = await f.text(); runRename(); }
+  });
   // Only one branch-click mode is active at a time; enabling one clears the others.
   function setMode(mode) {
     rerootOn = mode === "reroot"; colorOn = mode === "color"; collapseOn = mode === "collapse";
@@ -665,6 +716,7 @@ export function mountViewer(container, initialData) {
     TREES = Array.isArray(DATA.trees) ? DATA.trees
       : [{ name: (DATA.meta && DATA.meta.title) || (isRecon ? "reconciliation" : "tree"), tree: DATA.tree, score: DATA.meta && DATA.meta.score, dups: DATA.meta && DATA.meta.dups, losses: DATA.meta && DATA.meta.losses }];
     curIdx = 0; staleWarn = false; hlSet = new Set();
+    renameMap = new Map(); if ($("renameMap")) { $("renameMap").value = ""; $("renameCount").textContent = ""; }
     setMode(null);   // clear reroot / colour / collapse click-modes
     filtered = TREES.map((_, i) => i);
     $("rowLoss").style.display = isRecon ? "flex" : "none";

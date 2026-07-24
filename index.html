@@ -45,6 +45,15 @@
       <h4>Find</h4>
       <input type="search" id="find" placeholder="highlight taxa (comma-sep)…">
 
+      <h4>Rename tips</h4>
+      <textarea id="renameMap" rows="4" placeholder="current_name&#9;New name&#10;one pair per line…"></textarea>
+      <button class="act" id="applyRename">Apply renames</button>
+      <button class="act" id="loadRename">Load map file…</button>
+      <div class="hint" id="renameCount"></div>
+      <button class="act warn" id="clearRename">Clear renames</button>
+      <div class="hint">Two columns — current name, then new name — one pair per line, tab- or comma-separated. Drop a file on the box to load it.</div>
+      <input type="file" id="renameFile" accept=".tsv,.csv,.txt,text/plain" style="display:none">
+
       <h4>Colour</h4>
       <div class="row"><label for="colorMode">Colour mode</label><input type="checkbox" id="colorMode"></div>
       <div class="palette" id="palette"></div>

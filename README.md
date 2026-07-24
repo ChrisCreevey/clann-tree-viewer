@@ -13,6 +13,10 @@ You can use the deployed version to visualise trees here: [https://chriscreevey.
 
 ## What's new
 
+- **Rename tips** — paste (or drop/upload) a two-column map of `current` → `new`
+  names, tab- or comma-separated. Matching is exact on the original tip label;
+  renames apply live, survive tree switches, revert with one click, and are
+  written into the exported Newick.
 - **Radial layout** — a circular view with the root at the centre and tips on the
   outer ring, alongside the existing cladogram and phylogram modes.
 - **Clade colouring** — pick from a palette and click a branch to colour that
@@ -43,6 +47,8 @@ current tree's name beside it.
   clades (by click or support threshold), ladderize, highlight taxa, zoom & pan.
 - **Colouring:** click-to-colour clades from a palette, inherited down each
   subtree.
+- **Renaming:** map current tip names to new ones from a pasted or uploaded
+  two-column list.
 - **Export:** SVG, PNG, PDF, and Newick of the current rooting — all generated
   in-page with no external libraries.
 - **Multi-tree navigation:** filter and step through every tree in a file.
