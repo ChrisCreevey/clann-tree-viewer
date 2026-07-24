@@ -45,45 +45,55 @@
       <h4>Find</h4>
       <input type="search" id="find" placeholder="highlight taxa (comma-sep)…">
 
-      <h4>Rename tips</h4>
-      <div class="renamecols">
-        <textarea id="renameOrig" wrap="off" spellcheck="false" rows="6" title="Current taxa (original spelling)"></textarea>
-        <textarea id="renameNew" wrap="off" spellcheck="false" rows="6" placeholder="new names…" title="New name on the matching line — blank keeps the original"></textarea>
-      </div>
-      <button class="act" id="applyRename">Apply renames</button>
-      <button class="act" id="loadRename">Load map file…</button>
-      <div class="hint" id="renameCount"></div>
-      <button class="act warn" id="clearRename">Clear renames</button>
-      <div class="hint">Left column lists the current taxa. Type or paste each new name on the matching line in the right column; a blank line keeps the original. Or load a two-column (tab/comma) file.</div>
-      <input type="file" id="renameFile" accept=".tsv,.csv,.txt,text/plain" style="display:none">
+      <details class="sect">
+        <summary>Rename tips</summary>
+        <div class="renamecols">
+          <textarea id="renameOrig" wrap="off" spellcheck="false" rows="6" title="Current taxa (original spelling)"></textarea>
+          <textarea id="renameNew" wrap="off" spellcheck="false" rows="6" placeholder="new names…" title="New name on the matching line — blank keeps the original"></textarea>
+        </div>
+        <button class="act" id="applyRename">Apply renames</button>
+        <button class="act" id="loadRename">Load map file…</button>
+        <div class="hint" id="renameCount"></div>
+        <button class="act warn" id="clearRename">Clear renames</button>
+        <div class="hint">Left column lists the current taxa. Type or paste each new name on the matching line in the right column; a blank line keeps the original. Or load a two-column (tab/comma) file.</div>
+        <input type="file" id="renameFile" accept=".tsv,.csv,.txt,text/plain" style="display:none">
+      </details>
 
-      <h4>Colour</h4>
-      <div class="row"><label for="colorMode">Colour mode</label><input type="checkbox" id="colorMode"></div>
-      <div class="palette" id="palette"></div>
-      <div class="hint">Pick a swatch, then click a branch to colour that clade. The ✕ swatch clears.</div>
-      <div class="row" style="margin-top:10px"><label for="lineW">Line thickness</label></div>
-      <input type="range" id="lineW" min="0.5" max="5" step="0.5" value="1.5">
+      <details class="sect">
+        <summary>Colour</summary>
+        <div class="row"><label for="colorMode">Colour mode</label><input type="checkbox" id="colorMode"></div>
+        <div class="palette" id="palette"></div>
+        <div class="hint">Pick a swatch, then click a branch to colour that clade. The ✕ swatch clears.</div>
+        <div class="row" style="margin-top:10px"><label for="lineW">Line thickness</label></div>
+        <input type="range" id="lineW" min="0.5" max="5" step="0.5" value="1.5">
+      </details>
 
-      <h4>Collapse</h4>
-      <div class="row"><label for="collapseMode">Collapse mode</label><input type="checkbox" id="collapseMode"></div>
-      <div class="hint">Click an internal branch to collapse that clade (click again to expand). A node dot toggles too.</div>
-      <div class="row" style="margin-top:8px"><label for="supCollapse">Collapse support &lt; <b id="supVal">0</b></label></div>
-      <input type="range" id="supCollapse" min="0" max="100" value="0">
-      <button class="act" id="expandAll">Expand all</button>
+      <details class="sect">
+        <summary>Collapse</summary>
+        <div class="row"><label for="collapseMode">Collapse mode</label><input type="checkbox" id="collapseMode"></div>
+        <div class="hint">Click an internal branch to collapse that clade (click again to expand). A node dot toggles too.</div>
+        <div class="row" style="margin-top:8px"><label for="supCollapse">Collapse support &lt; <b id="supVal">0</b></label></div>
+        <input type="range" id="supCollapse" min="0" max="100" value="0">
+        <button class="act" id="expandAll">Expand all</button>
+      </details>
 
-      <h4>Edit</h4>
-      <div class="row"><label for="rerootMode">Reroot mode</label><input type="checkbox" id="rerootMode"></div>
-      <div class="hint">Click a branch to reroot there.</div>
-      <button class="act" id="ladder">Ladderize ⇅</button>
-      <button class="act" id="midpoint">Midpoint root</button>
-      <button class="act warn" id="reset">Reset view</button>
+      <details class="sect">
+        <summary>Edit</summary>
+        <div class="row"><label for="rerootMode">Reroot mode</label><input type="checkbox" id="rerootMode"></div>
+        <div class="hint">Click a branch to reroot there.</div>
+        <button class="act" id="ladder">Ladderize ⇅</button>
+        <button class="act" id="midpoint">Midpoint root</button>
+        <button class="act warn" id="reset">Reset view</button>
+      </details>
 
-      <h4>Export</h4>
-      <button class="act" id="expSvg">Download SVG</button>
-      <button class="act" id="expPng">Download PNG</button>
-      <button class="act" id="expPdf">Download PDF</button>
-      <button class="act" id="expNwk">Copy Newick (current rooting)</button>
-      <div class="hint" style="margin-top:10px">Scroll to zoom · drag to pan · <kbd>R</kbd> reroot toggle</div>
+      <details class="sect">
+        <summary>Export</summary>
+        <button class="act" id="expSvg">Download SVG</button>
+        <button class="act" id="expPng">Download PNG</button>
+        <button class="act" id="expPdf">Download PDF</button>
+        <button class="act" id="expNwk">Copy Newick (current rooting)</button>
+        <div class="hint" style="margin-top:10px">Scroll to zoom · drag to pan · <kbd>R</kbd> reroot toggle</div>
+      </details>
     </aside>
     <div id="wrap">
       <svg id="svg"><g id="scene"></g></svg>

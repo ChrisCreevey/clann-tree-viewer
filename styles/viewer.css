@@ -53,6 +53,17 @@ main{flex:1;display:flex;min-height:0}
 #side h4{margin:16px 0 7px;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   font-family:var(--font-mono);font-weight:500}
 #side h4:first-child{margin-top:0}
+.sect{border-top:1px solid var(--line);margin-top:14px}
+.sect>summary{list-style:none;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;
+  margin:12px 0 7px;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  font-family:var(--font-mono);font-weight:500}
+.sect>summary::-webkit-details-marker{display:none}
+.sect>summary::before{content:"▸";font-size:9px;color:var(--muted);transition:transform 120ms}
+.sect[open]>summary::before{transform:rotate(90deg)}
+.sect>summary:hover{color:var(--ink)}
+.sect>summary:hover::before{color:var(--ink)}
+.sect>summary:focus-visible{outline:none;color:var(--accent)}
+.sect>*:last-child{margin-bottom:4px}
 .row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12.5px}
 .row label{flex:1;user-select:none}
 .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
