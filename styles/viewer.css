@@ -84,6 +84,8 @@ button.act{width:100%;padding:6px 9px;border:1px solid var(--line);border-radius
   color:var(--ink);cursor:pointer;margin:4px 0;font:inherit;font-size:12.5px;transition:border-color 140ms,transform 80ms}
 button.act:hover{border-color:var(--accent)}
 button.act:active{transform:translateY(1px)}
+button.act:disabled{opacity:.45;cursor:default;border-color:var(--line)}
+button.act:disabled:hover{border-color:var(--line)}
 button.act.warn{color:var(--dup);border-color:var(--dup)}
 button.act.warn:hover{background:var(--dup);color:#fff}
 #wrap{flex:1;position:relative;overflow:hidden}

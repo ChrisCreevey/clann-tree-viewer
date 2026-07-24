@@ -27,6 +27,7 @@ export function mountViewer(container, initialData) {
   let filtered = [];
   let colorOn = false, collapseOn = false, activeColor = null, pendingCenter = false;
   let renameMap = new Map();   // originalTipName -> displayName
+  let undoStack = [];          // snapshots of the tree before each structural edit
   const PALETTE = ["#C56347", "#D99A2B", "#5F6E33", "#149589", "#3B6EA5", "#7A4FA3", "#B03060", "#8C6D3F"];
 
   // ---------- name conventions ----------
@@ -205,7 +206,7 @@ export function mountViewer(container, initialData) {
       scene.appendChild(b);
       if (!n.lost) {
         const hit = el("path", { d: path, class: "branch hit", "data-id": n.id });
-        hit.addEventListener("click", (ev) => { ev.stopPropagation(); if (colorOn) applyColor(n); else if (collapseOn) { if (n.children.length) { n.collapsed = !n.collapsed; render(); } } else if (rerootOn) doReroot(n); else selectBranch(n); });
+        hit.addEventListener("click", (ev) => { ev.stopPropagation(); if (colorOn) applyColor(n); else if (collapseOn) { if (n.children.length) toggleCollapse(n); } else if (rerootOn) doReroot(n); else selectBranch(n); });
         hit.addEventListener("mousemove", (e) => showTip(e, n, true));
         hit.addEventListener("mouseleave", hideTip);
         scene.appendChild(hit);
@@ -251,9 +252,11 @@ export function mountViewer(container, initialData) {
           tri = el("path", { d: `M${X},${Y} L${X + near},${Y - h / 2} L${X + far},${Y + h / 2} Z`, class: "collapsed" });
         }
         if (n._color) tri.style.fill = n._color;
-        tri.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = false; render(); });
+        tri.addEventListener("click", (ev) => { ev.stopPropagation(); expandNode(n); });
         scene.appendChild(tri);
-        placeLabel(n, (n.name ? disp(n.name) : ("▸ " + nleaf + " taxa")), radial ? n._r + far + 6 : X + far + 6, "leaflabel", fsize);
+        const lbl = placeLabel(n, (n.name ? disp(n.name) : ("▸ " + nleaf + " taxa")), radial ? n._r + far + 6 : X + far + 6, "leaflabel", fsize);
+        lbl.style.cursor = "pointer";
+        lbl.addEventListener("click", (ev) => { ev.stopPropagation(); expandNode(n); });   // click the "N taxa" label to expand too
         return;
       }
       if (n.isLeaf) {
@@ -281,7 +284,7 @@ export function mountViewer(container, initialData) {
         if (n.event === "duplication") g = el("rect", { x: X - 4, y: Y - 4, width: 8, height: 8, fill: "var(--dup)", class: "nodeglyph" });
         else g = el("circle", { cx: X, cy: Y, r: 3, fill: "var(--spec)", class: "nodeglyph" });
         g.setAttribute("data-id", n.id);
-        g.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = !n.collapsed; render(); });
+        g.addEventListener("click", (ev) => { ev.stopPropagation(); toggleCollapse(n); });
         g.addEventListener("mousemove", (e) => showTip(e, n, false));
         g.addEventListener("mouseleave", hideTip);
         scene.appendChild(g);
@@ -289,7 +292,7 @@ export function mountViewer(container, initialData) {
         // no glyph on the root itself — it's not a real bifurcation, just the
         // drawing origin (and a trifurcating root means the tree is unrooted).
         const g = el("circle", { cx: X, cy: Y, r: 2.6, fill: "var(--branch)", class: "nodeglyph" });
-        g.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = !n.collapsed; render(); });
+        g.addEventListener("click", (ev) => { ev.stopPropagation(); toggleCollapse(n); });
         scene.appendChild(g);
       }
       if (n.children.length && !n.collapsed) {
@@ -361,9 +364,28 @@ export function mountViewer(container, initialData) {
   function selectBranch() { container.querySelectorAll(".branch.sel").forEach((e) => e.classList.remove("sel")); }
   function matchHL(n) { const s = normName([n.name, n._orig, n.species].filter(Boolean).join(" ")); return [...hlSet].some((q) => s.includes(q)); }
 
+  // ---------- undo ----------
+  // Snapshot the whole tree (structuredClone copes with the cyclic parent links)
+  // before a structural edit — reroot, collapse/expand, ladderize, midpoint.
+  function pushUndo() {
+    let snap; try { snap = structuredClone(root); } catch { return; }
+    undoStack.push({ root: snap, stale: staleWarn });
+    if (undoStack.length > 60) undoStack.shift();
+    refreshUndo();
+  }
+  function refreshUndo() { const b = $("undo"); if (b) b.disabled = !undoStack.length; }
+  function undo() {
+    const s = undoStack.pop(); if (!s) return;
+    root = s.root; staleWarn = s.stale;
+    render(); updateMeta(); refreshUndo();
+  }
+  const toggleCollapse = (n) => { pushUndo(); n.collapsed = !n.collapsed; render(); };
+  const expandNode = (n) => { pushUndo(); n.collapsed = false; render(); };
+
   // ---------- reroot ----------
   function doReroot(node) {
     if (!node.parent) return;
+    pushUndo();
     const nr = { name: "", children: [], event: isRecon ? "speciation" : null };
     let cur = node, par = node.parent;
     removeChild(par, cur);
@@ -477,6 +499,7 @@ export function mountViewer(container, initialData) {
     curIdx = i;
     ID = 0; root = build(structuredClone(curEntry().tree), null);
     staleWarn = false; hlSet = new Set(); $("find").value = "";
+    undoStack = []; refreshUndo();   // fresh tree ⇒ nothing to undo
     view = { k: 1, x: 40, y: 20 };
     if (layout === "radial") pendingCenter = true;
     if ($("supCollapse")) { $("supCollapse").value = 0; $("supVal").textContent = "0"; }
@@ -719,6 +742,7 @@ export function mountViewer(container, initialData) {
   $("colorMode").onchange = (e) => setMode(e.target.checked ? "color" : null);
 
   // ---------- collapse by support threshold ----------
+  $("supCollapse").addEventListener("pointerdown", () => pushUndo());   // snapshot once before a drag
   $("supCollapse").oninput = (e) => {
     const thr = +e.target.value; $("supVal").textContent = thr;
     each(root, (n) => {
@@ -765,8 +789,9 @@ export function mountViewer(container, initialData) {
   function edgeLen(x, y) { return (x.parent === y ? x.length : y.length) || 0; }
   function flash(btn, msg) { const t = btn.textContent; btn.textContent = msg; setTimeout(() => (btn.textContent = t), 1500); }
   $("midpoint").onclick = midpointRoot;
-  $("ladder").onclick = () => { (function lad(n) { n.children.sort((a, b) => countLeaves(a) - countLeaves(b)); n.children.forEach(lad); })(root); render(); };
-  $("expandAll").onclick = () => { each(root, (n) => n.collapsed = false); render(); };
+  $("ladder").onclick = () => { pushUndo(); (function lad(n) { n.children.sort((a, b) => countLeaves(a) - countLeaves(b)); n.children.forEach(lad); })(root); render(); };
+  $("expandAll").onclick = () => { pushUndo(); each(root, (n) => n.collapsed = false); render(); };
+  $("undo").onclick = undo;
   $("reset").onclick = () => loadTree(curIdx);
   // NB: the light/dark toggle is a shell-level control wired in app.js, so it
   // works before any tree is loaded (this module only mounts once a file opens).
@@ -781,7 +806,8 @@ export function mountViewer(container, initialData) {
   window.addEventListener("mousemove", onMove);
   window.addEventListener("mouseup", onUp);
   const onKey = (e) => {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z")) { e.preventDefault(); undo(); return; }
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
     if (e.key === "r" || e.key === "R") { const c = $("rerootMode"); c.checked = !c.checked; c.onchange({ target: c }); }
     else if (e.key === "ArrowLeft" && TREES.length > 1) stepTree(-1);
     else if (e.key === "ArrowRight" && TREES.length > 1) stepTree(1);

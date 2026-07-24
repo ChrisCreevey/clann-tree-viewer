@@ -54,7 +54,9 @@ current tree's name beside it.
   outer level (dendrogram style), so it's clear at a glance there are no branch
   lengths.
 - **Interactive:** reroot (interactive or midpoint) on any branch, collapse/expand
-  clades (by click or support threshold), ladderize, highlight taxa, zoom & pan.
+  clades (click a node dot to collapse, click the triangle or its “N taxa” label
+  to expand), ladderize, highlight taxa, zoom & pan. **Undo** (button or ⌘/Ctrl-Z)
+  reverses reroot / collapse / ladderize edits.
 - **Colouring:** click-to-colour clades from a palette, inherited down each
   subtree.
 - **Renaming:** map current tip names to new ones from a pasted or uploaded
