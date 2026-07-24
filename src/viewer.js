@@ -277,7 +277,9 @@ export function mountViewer(container, initialData) {
         g.addEventListener("mousemove", (e) => showTip(e, n, false));
         g.addEventListener("mouseleave", hideTip);
         scene.appendChild(g);
-      } else if (!isRecon && n.children.length) {
+      } else if (!isRecon && n.children.length && n.parent) {
+        // no glyph on the root itself — it's not a real bifurcation, just the
+        // drawing origin (and a trifurcating root means the tree is unrooted).
         const g = el("circle", { cx: X, cy: Y, r: 2.6, fill: "var(--branch)", class: "nodeglyph" });
         g.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = !n.collapsed; render(); });
         scene.appendChild(g);
@@ -317,7 +319,10 @@ export function mountViewer(container, initialData) {
     if (radial && pendingCenter) {
       pendingCenter = false;
       const w = $("wrap").clientWidth || 900, h = $("wrap").clientHeight || 600;
-      view.x = w / 2 - cx * view.k; view.y = h / 2 - cy * view.k;
+      const b = scene.getBBox(), pad = 30;   // fit the whole radial tree (labels included) into view
+      view.k = Math.min(8, Math.max(0.15, Math.min(w / (b.width + pad), h / (b.height + pad))));
+      view.x = (w - b.width * view.k) / 2 - b.x * view.k;
+      view.y = (h - b.height * view.k) / 2 - b.y * view.k;
     }
     applyView();
     drawLegend();
