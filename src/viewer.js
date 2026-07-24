@@ -137,11 +137,15 @@ export function mountViewer(container, initialData) {
     })(root);
     const md = Math.max(1, maxDepth(root));
     let maxLen = 0; (function cl(n, acc) { n._cl = acc; maxLen = Math.max(maxLen, acc); if (!n.collapsed) n.children.forEach((c) => cl(c, acc + (c.length || 0))); })(root, 0);
-    // height = longest path (in edges) from a node to a visible descendant tip.
+    // height = longest path (in edges) from a node to a descendant tip.
     // Cladograms position by height so every tip lands on the same outer level
     // (dendrogram style) — visibly a cladogram, not a tree with equal lengths.
+    // Collapsed nodes keep the height of their *hidden* subtree (we don't stop at
+    // n.collapsed here) so a collapsed clade stays at its real internal position
+    // and its triangle fills the gap out to the tip line — rather than the node
+    // being promoted to a tip and the triangle shooting past the edge.
     (function ht(n) {
-      if (n.collapsed || !n.children.length) return (n._h = 0);
+      if (!n.children.length) return (n._h = 0);
       const hs = n.children.filter((c) => !c.lost || showLoss).map(ht);
       return (n._h = hs.length ? 1 + Math.max(...hs) : 0);
     })(root);
