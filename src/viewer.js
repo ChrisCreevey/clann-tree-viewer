@@ -397,11 +397,23 @@ export function mountViewer(container, initialData) {
       child.parent = prev; prev.children.push(child);
       prev = child; child = up;
     }
-    ID = 0; root = build(nr, null);
+    ID = 0; root = build(pruneUnary(nr), null);
     if (isRecon) { each(root, (n) => { if (n.children.length && !n.isLoss) n.event = n.event || "speciation"; }); staleWarn = true; updateMeta(); }
     render();
   }
   function removeChild(p, c) { p.children = p.children.filter((x) => x !== c); }
+  // Splice out degree-2 (single-child) nodes — the old root becomes one of these
+  // after a reroot, and without removing it they pile up with each reroot. The
+  // knuckle's branch length is folded into its surviving child.
+  function pruneUnary(n) {
+    while (n.children && n.children.length === 1) {
+      const c = n.children[0];
+      if (c.length != null || n.length != null) c.length = (c.length || 0) + (n.length || 0);
+      n = c;   // drop the knuckle, keep the deeper node's name/support/event
+    }
+    if (n.children) n.children = n.children.map(pruneUnary);
+    return n;
+  }
 
   // ---------- newick ----------
   function toNewick(n) {
