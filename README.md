@@ -11,16 +11,40 @@ onto any web host.
 
 You can use the deployed version to visualise trees here: [https://chriscreevey.github.io/clann-tree-viewer/](https://chriscreevey.github.io/clann-tree-viewer/).
 
+## What's new
+
+- **Radial layout** — a circular view with the root at the centre and tips on the
+  outer ring, alongside the existing cladogram and phylogram modes.
+- **Clade colouring** — pick from a palette and click a branch to colour that
+  clade; colours inherit down the subtree (and nested clades override), and carry
+  through to every export.
+- **Collapse mode** — a dedicated click-to-collapse mode. A collapsed clade is
+  drawn as a triangle whose near/far edges match its shortest/longest tip
+  distance, so the shape hints at the diversity it hides.
+- **Collapse by support** — a threshold slider that folds away poorly supported
+  clades.
+- **Midpoint rooting** — one-click rooting at the midpoint of the tree's longest
+  tip-to-tip path.
+- **Line thickness** and **PNG export**, plus **search that recentres** the view
+  on the first match.
+
+The persistent **Clann Tree Viewer** name now sits in the header, with the
+current tree's name beside it.
+
 ## Features
 
 - **Formats:** Newick (`.nwk`, `.newick`, `.tree`) and NHX (`.nhx`) — including
   multi-tree files.
 - **Reconciliation rendering:** duplication (■), speciation (●), and loss (dashed
   ✕ stubs), read straight from NHX `[&&NHX:S=…:D=Y/N]` tags and `*LOST` leaves.
-- **Interactive:** reroot on any branch, collapse/expand clades, ladderize,
-  highlight taxa, cladogram/phylogram layouts, zoom & pan.
-- **Export:** SVG, PDF, and Newick of the current rooting — all generated in-page
-  with no external libraries.
+- **Layouts:** cladogram, phylogram, and radial, with adjustable row spacing,
+  font size, and branch-line thickness.
+- **Interactive:** reroot (interactive or midpoint) on any branch, collapse/expand
+  clades (by click or support threshold), ladderize, highlight taxa, zoom & pan.
+- **Colouring:** click-to-colour clades from a palette, inherited down each
+  subtree.
+- **Export:** SVG, PNG, PDF, and Newick of the current rooting — all generated
+  in-page with no external libraries.
 - **Multi-tree navigation:** filter and step through every tree in a file.
 
 ## Usage
@@ -74,9 +98,11 @@ examples/             Sample trees
 test/                 Fixture-driven parser tests
 ```
 
-The renderer in `src/viewer.js` is a faithful port of the viewer Clann embeds in
-its `htmlview` output (`tools/clannview.template.html`), so fixes can flow
-between the two. It consumes a `ViewerData` document
+The renderer in `src/viewer.js` began as a faithful port of the viewer Clann
+embeds in its `htmlview` output (`tools/clannview.template.html`); core parsing
+and reconciliation fixes can still flow between the two, though the features
+above are currently specific to this standalone viewer. It consumes a
+`ViewerData` document
 (`{ type, meta, trees:[{ name, score?, dups?, losses?, tree }] }`); the parsers'
 only job is to turn uploaded text into that shape.
 

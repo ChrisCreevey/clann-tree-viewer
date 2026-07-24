@@ -9,7 +9,8 @@
 <body>
 <div id="viewer" style="display:flex;flex-direction:column;flex:1;min-height:0">
   <header>
-    <span class="title" id="hTitle">Clann tree viewer</span>
+    <span class="brand" id="brand">Clann Tree Viewer</span>
+    <span class="title" id="hTitle"></span>
     <span id="nav">
       <input type="search" id="treeSearch" placeholder="filter trees…" title="Filter trees by name, number, or a taxon they contain">
       <button id="prevT" title="Previous match (←)">◀</button>
@@ -26,7 +27,7 @@
     <aside id="side">
       <h4>Layout</h4>
       <div class="row"><div class="seg" id="segLayout" style="flex:1">
-        <button data-v="clado" class="on">Cladogram</button><button data-v="phylo">Phylogram</button>
+        <button data-v="clado" class="on">Cladogram</button><button data-v="phylo">Phylogram</button><button data-v="radial">Radial</button>
       </div></div>
       <div class="row"><label>Row spacing</label></div>
       <input type="range" id="vspace" min="10" max="46" value="20">
@@ -44,15 +45,30 @@
       <h4>Find</h4>
       <input type="search" id="find" placeholder="highlight taxa (comma-sep)…">
 
-      <h4>Edit</h4>
-      <div class="row"><label>Reroot mode</label><input type="checkbox" id="rerootMode"></div>
-      <div class="hint">Click a branch to reroot there. Click a node dot to collapse/expand.</div>
-      <button class="act" id="ladder">Ladderize ⇅</button>
+      <h4>Colour</h4>
+      <div class="row"><label for="colorMode">Colour mode</label><input type="checkbox" id="colorMode"></div>
+      <div class="palette" id="palette"></div>
+      <div class="hint">Pick a swatch, then click a branch to colour that clade. The ✕ swatch clears.</div>
+      <div class="row" style="margin-top:10px"><label for="lineW">Line thickness</label></div>
+      <input type="range" id="lineW" min="0.5" max="5" step="0.5" value="1.5">
+
+      <h4>Collapse</h4>
+      <div class="row"><label for="collapseMode">Collapse mode</label><input type="checkbox" id="collapseMode"></div>
+      <div class="hint">Click an internal branch to collapse that clade (click again to expand). A node dot toggles too.</div>
+      <div class="row" style="margin-top:8px"><label for="supCollapse">Collapse support &lt; <b id="supVal">0</b></label></div>
+      <input type="range" id="supCollapse" min="0" max="100" value="0">
       <button class="act" id="expandAll">Expand all</button>
+
+      <h4>Edit</h4>
+      <div class="row"><label for="rerootMode">Reroot mode</label><input type="checkbox" id="rerootMode"></div>
+      <div class="hint">Click a branch to reroot there.</div>
+      <button class="act" id="ladder">Ladderize ⇅</button>
+      <button class="act" id="midpoint">Midpoint root</button>
       <button class="act warn" id="reset">Reset view</button>
 
       <h4>Export</h4>
       <button class="act" id="expSvg">Download SVG</button>
+      <button class="act" id="expPng">Download PNG</button>
       <button class="act" id="expPdf">Download PDF</button>
       <button class="act" id="expNwk">Copy Newick (current rooting)</button>
       <div class="hint" style="margin-top:10px">Scroll to zoom · drag to pan · <kbd>R</kbd> reroot toggle</div>

@@ -25,6 +25,8 @@ export function mountViewer(container, initialData) {
   let view = { k: 1, x: 40, y: 20 };
   let rerootOn = false, hlSet = new Set(), staleWarn = false;
   let filtered = [];
+  let colorOn = false, collapseOn = false, activeColor = null, pendingCenter = false;
+  const PALETTE = ["#C56347", "#D99A2B", "#5F6E33", "#149589", "#3B6EA5", "#7A4FA3", "#B03060", "#8C6D3F"];
 
   // ---------- model ----------
   function build(n, parent) {
@@ -38,7 +40,24 @@ export function mountViewer(container, initialData) {
   function leaves(n, acc) { acc = acc || []; if (n.collapsed || (!n.children.length)) { if (!n.lost || showLoss) acc.push(n); } else n.children.forEach((c) => leaves(c, acc)); return acc; }
   function each(n, f) { f(n); n.children.forEach((c) => each(c, f)); }
   function depthOf(n) { let d = 0, p = n; while (p.parent) { d++; p = p.parent; } return d; }
-  function maxDepth(r) { let m = 0; each(r, (n) => { if (!n.collapsed) m = Math.max(m, depthOf(n)); }); return m; }
+  // deepest *visible* node — recursion stops at collapsed clades so their hidden
+  // descendants don't inflate the depth (and shrink the horizontal spacing).
+  function maxDepth(r) { let m = 0; (function w(n, d) { m = Math.max(m, d); if (!n.collapsed) n.children.forEach((c) => w(c, d + 1)); })(r, 0); return m; }
+  // Is this node hidden because an ancestor is collapsed? (n itself may be the collapsed one.)
+  function hiddenByCollapse(n) { for (let p = n.parent; p; p = p.parent) if (p.collapsed) return true; return false; }
+  // Shortest/longest root-to-tip distance inside a clade, measured both as
+  // cumulative branch length (mnLen/mxLen) and as edge count (mnEdge/mxEdge).
+  // Used to draw a collapsed triangle whose near/far edges echo the clade's spread.
+  function cladeTipStats(n) {
+    let mnLen = Infinity, mxLen = 0, mnEdge = Infinity, mxEdge = 0;
+    (function walk(m, acc, e) {
+      const kids = (m.children || []).filter((c) => !c.lost || showLoss);
+      if (!kids.length) { mnLen = Math.min(mnLen, acc); mxLen = Math.max(mxLen, acc); mnEdge = Math.min(mnEdge, e); mxEdge = Math.max(mxEdge, e); return; }
+      kids.forEach((c) => walk(c, acc + (c.length || 0), e + 1));
+    })(n, 0, 0);
+    if (mnLen === Infinity) { mnLen = mxLen = 0; mnEdge = mxEdge = 0; }
+    return { mnLen, mxLen, mnEdge, mxEdge };
+  }
   function curEntry() { return TREES[curIdx] || {}; }
   // Does this tree carry meaningful (non-zero) branch lengths? If so we open in
   // phylogram mode so the lengths are actually visible — otherwise a length-
@@ -52,6 +71,7 @@ export function mountViewer(container, initialData) {
     return found;
   }
   function setLayout(v) {
+    if (v === "radial" && layout !== "radial") pendingCenter = true;
     layout = v;
     [...$("segLayout").children].forEach((b) => b.classList.toggle("on", b.dataset.v === v));
     $("rowScale").style.display = v === "phylo" ? "flex" : "none";
@@ -77,91 +97,151 @@ export function mountViewer(container, initialData) {
       else n._x = depthOf(n) * xstep;
     });
     root._x = 0;
-    return { ls, W, maxLen };
+    return { ls, W, maxLen, xstep };
   }
 
   // ---------- render ----------
   const el = (t, a) => { const e = document.createElementNS("http://www.w3.org/2000/svg", t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  // Polar geometry state, recomputed each render when in radial mode.
+  let radial = false, cx = 0, cy = 0, rMax = 0;
+  const ANG_SPAN = 2 * Math.PI * (350 / 360), ANG0 = -Math.PI / 2;
+  const SX = (n) => radial ? cx + n._r * Math.cos(n._ang) : n._x;
+  const SY = (n) => radial ? cy + n._r * Math.sin(n._ang) : n._y;
+  const polar = (r, a) => `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+  // Branch path from a node's parent to the node, in the current layout.
+  function branchPath(n) {
+    const p = n.parent;
+    if (!radial) return `M${p._x},${p._y} V${n._y} H${n._x}`;
+    const a0 = p._ang, a1 = n._ang, r0 = p._r;
+    const arc = r0 > 0 ? `M${polar(r0, a0)} A${r0},${r0} 0 0 ${a1 > a0 ? 1 : 0} ${polar(r0, a1)}` : `M${cx},${cy}`;
+    return `${arc} L${polar(n._r, a1)}`;
+  }
   function render() {
-    const { W, maxLen } = computeLayout();
+    const { W, maxLen, xstep } = computeLayout();
+    // colour inheritance: preorder walk fills _color from the nearest coloured ancestor
+    each(root, (n) => { n._color = n.color || (n.parent && n.parent._color) || null; });
+    radial = layout === "radial";
+    if (radial) {
+      const yMax = Math.max(1, ...leaves(root).map((n) => n._y));
+      rMax = 0;
+      each(root, (n) => { n._ang = ANG0 + (n._y / yMax) * ANG_SPAN; n._r = n._x; rMax = Math.max(rMax, n._x); });
+      cx = rMax; cy = rMax;
+    }
     scene.innerHTML = "";
     const tipX = Math.max(...leaves(root).map((n) => n._x));
     each(root, (n) => {
       if (!n.parent) return;
+      if (hiddenByCollapse(n)) return;   // inside a collapsed clade — the triangle stands in for it
       if (n.lost && !showLoss) return;
-      const p = n.parent;
       const cls = n.lost ? "lossbranch" : "branch";
-      const path = `M${p._x},${p._y} V${n._y} H${n._x}`;
-      scene.appendChild(el("path", { d: path, class: cls }));
+      const path = branchPath(n);
+      const b = el("path", { d: path, class: cls });
+      if (!n.lost && n._color) b.style.stroke = n._color;  // inline style beats the .branch stylesheet rule
+      scene.appendChild(b);
       if (!n.lost) {
         const hit = el("path", { d: path, class: "branch hit", "data-id": n.id });
-        hit.addEventListener("click", (ev) => { ev.stopPropagation(); if (rerootOn) doReroot(n); else selectBranch(n); });
+        hit.addEventListener("click", (ev) => { ev.stopPropagation(); if (colorOn) applyColor(n); else if (collapseOn) { if (n.children.length) { n.collapsed = !n.collapsed; render(); } } else if (rerootOn) doReroot(n); else selectBranch(n); });
         hit.addEventListener("mousemove", (e) => showTip(e, n, true));
         hit.addEventListener("mouseleave", hideTip);
         scene.appendChild(hit);
       }
     });
-    each(root, (n) => {
-      if (n.collapsed || n.children.length < 2) return;
+    if (!radial) each(root, (n) => {
+      // vertical child-connector (linear only; radial arcs already join siblings)
+      if (n.collapsed || hiddenByCollapse(n) || n.children.length < 2) return;
       const vis = n.children.filter((c) => !c.lost || showLoss);
       if (vis.length < 2) return;
       const y0 = Math.min(...vis.map((c) => c._y)), y1 = Math.max(...vis.map((c) => c._y));
-      scene.appendChild(el("path", { d: `M${n._x},${y0} V${y1}`, class: n.lost ? "lossbranch" : "branch" }));
+      const b = el("path", { d: `M${n._x},${y0} V${y1}`, class: n.lost ? "lossbranch" : "branch" });
+      if (!n.lost && n._color) b.style.stroke = n._color;
+      scene.appendChild(b);
     });
     each(root, (n) => {
+      if (hiddenByCollapse(n)) return;   // descendants of a collapsed clade aren't drawn
+      const X = SX(n), Y = SY(n);
       if (n.isLoss) {
         if (showLoss) {
-          scene.appendChild(el("circle", { cx: n._x, cy: n._y, r: 3.2, fill: "none", stroke: "var(--loss)", "stroke-width": 1.4 }));
-          const t = el("text", { x: n._x + 7, y: n._y + 3.5, class: "intlabel", "font-size": Math.max(9, fsize - 2) });
+          scene.appendChild(el("circle", { cx: X, cy: Y, r: 3.2, fill: "none", stroke: "var(--loss)", "stroke-width": 1.4 }));
+          const t = el("text", { x: X + 7, y: Y + 3.5, class: "intlabel", "font-size": Math.max(9, fsize - 2) });
           t.textContent = "✕ " + (n.species || "loss"); t.style.fill = "var(--loss)"; scene.appendChild(t);
         }
         return;
       }
       if (n.collapsed) {
-        const nleaf = leaves(n).length || 1, h = Math.min(60, 6 + nleaf * 3);
-        const tri = el("path", { d: `M${n._x},${n._y} L${n._x + 34},${n._y - h / 2} L${n._x + 34},${n._y + h / 2} Z`, class: "collapsed" });
+        const nleaf = countLeaves(n) || 1, h = Math.min(60, 6 + nleaf * 3);
+        // near/far = distance from the node to the closest/furthest tip in the
+        // clade, in the same x-units the tree is drawn in. The triangle's two
+        // outer corners sit at those depths, so its slanted edge shows how much
+        // branch-length variation the collapsed clade hides.
+        const st = cladeTipStats(n);
+        let near, far;
+        if (layout === "phylo" && maxLen > 0) { const ppu = (W - 10) / maxLen; near = st.mnLen * ppu; far = st.mxLen * ppu; }
+        else { near = st.mnEdge * xstep; far = st.mxEdge * xstep; }
+        near = Math.max(near, 12); far = Math.max(far, near + 4);
+        let tri;
+        if (radial) {
+          const dA = (h / 2) / (n._r + far);
+          tri = el("path", { d: `M${polar(n._r, n._ang)} L${polar(n._r + near, n._ang - dA)} L${polar(n._r + far, n._ang + dA)} Z`, class: "collapsed" });
+        } else {
+          tri = el("path", { d: `M${X},${Y} L${X + near},${Y - h / 2} L${X + far},${Y + h / 2} Z`, class: "collapsed" });
+        }
+        if (n._color) tri.style.fill = n._color;
         tri.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = false; render(); });
         scene.appendChild(tri);
-        const t = el("text", { x: n._x + 40, y: n._y + 4, class: "leaflabel", "font-size": fsize });
-        t.textContent = (n.name || ("▸ " + nleaf + " taxa")); scene.appendChild(t);
+        placeLabel(n, (n.name || ("▸ " + nleaf + " taxa")), radial ? n._r + far + 6 : X + far + 6, "leaflabel", fsize);
         return;
       }
       if (n.isLeaf) {
-        const lx = opt.align ? tipX + 8 : n._x + 7;
-        if (opt.align && lx > n._x + 7) scene.appendChild(el("path", { d: `M${n._x},${n._y} H${lx - 3}`, class: "lossbranch" }));
-        const t = el("text", { x: lx, y: n._y + fsize * 0.34, class: "leaflabel", "font-size": fsize });
-        t.textContent = n.name || "?";
-        if (hlSet.size) { if (matchHL(n)) t.classList.add("hl"); else t.classList.add("dim"); }
-        t.addEventListener("mousemove", (e) => showTip(e, n, false));
-        t.addEventListener("mouseleave", hideTip);
-        scene.appendChild(t);
+        if (radial) {
+          const lr = (opt.align ? rMax : n._r) + 7;
+          if (opt.align && lr > n._r + 7) scene.appendChild(el("path", { d: `M${polar(n._r, n._ang)} L${polar(lr - 3, n._ang)}`, class: "lossbranch" }));
+          const t = placeLabel(n, n.name || "?", lr, "leaflabel", fsize);
+          if (hlSet.size) t.classList.add(matchHL(n) ? "hl" : "dim");
+          t.addEventListener("mousemove", (e) => showTip(e, n, false));
+          t.addEventListener("mouseleave", hideTip);
+        } else {
+          const lx = opt.align ? tipX + 8 : X + 7;
+          if (opt.align && lx > X + 7) scene.appendChild(el("path", { d: `M${X},${Y} H${lx - 3}`, class: "lossbranch" }));
+          const t = el("text", { x: lx, y: Y + fsize * 0.34, class: "leaflabel", "font-size": fsize });
+          t.textContent = n.name || "?";
+          if (hlSet.size) { if (matchHL(n)) t.classList.add("hl"); else t.classList.add("dim"); }
+          t.addEventListener("mousemove", (e) => showTip(e, n, false));
+          t.addEventListener("mouseleave", hideTip);
+          scene.appendChild(t);
+        }
       }
       if (n.lost) { /* no glyph on lost internal nodes */ }
       else if (isRecon && n.children.length) {
         let g;
-        if (n.event === "duplication") g = el("rect", { x: n._x - 4, y: n._y - 4, width: 8, height: 8, fill: "var(--dup)", class: "nodeglyph" });
-        else g = el("circle", { cx: n._x, cy: n._y, r: 3, fill: "var(--spec)", class: "nodeglyph" });
+        if (n.event === "duplication") g = el("rect", { x: X - 4, y: Y - 4, width: 8, height: 8, fill: "var(--dup)", class: "nodeglyph" });
+        else g = el("circle", { cx: X, cy: Y, r: 3, fill: "var(--spec)", class: "nodeglyph" });
         g.setAttribute("data-id", n.id);
         g.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = !n.collapsed; render(); });
         g.addEventListener("mousemove", (e) => showTip(e, n, false));
         g.addEventListener("mouseleave", hideTip);
         scene.appendChild(g);
       } else if (!isRecon && n.children.length) {
-        const g = el("circle", { cx: n._x, cy: n._y, r: 2.6, fill: "var(--branch)", class: "nodeglyph" });
+        const g = el("circle", { cx: X, cy: Y, r: 2.6, fill: "var(--branch)", class: "nodeglyph" });
         g.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = !n.collapsed; render(); });
         scene.appendChild(g);
       }
       if (n.children.length && !n.collapsed) {
         if (opt.support && n.support != null) {
-          const t = el("text", { x: n._x - 4, y: n._y - 5, class: "support", "text-anchor": "end" }); t.textContent = n.support; scene.appendChild(t);
+          const t = el("text", { x: X - 4, y: Y - 5, class: "support", "text-anchor": "end" }); t.textContent = n.support; scene.appendChild(t);
         }
         if (opt.intl && n.name) {
-          const t = el("text", { x: n._x + 5, y: n._y - 5, class: "intlabel" }); t.textContent = n.name; scene.appendChild(t);
+          const t = el("text", { x: X + 5, y: Y - 5, class: "intlabel" }); t.textContent = n.name; scene.appendChild(t);
         }
       }
     });
     if (opt.len) {
-      each(root, (n) => { if (n.parent && n.length && !n.isLoss) { const t = el("text", { x: (n.parent._x + n._x) / 2, y: n._y - 3, class: "support", "text-anchor": "middle" }); t.textContent = (+n.length).toFixed(3); scene.appendChild(t); } });
+      each(root, (n) => {
+        if (!(n.parent && n.length && !n.isLoss) || hiddenByCollapse(n)) return;
+        let lx, ly;
+        if (radial) { const mr = (n.parent._r + n._r) / 2; lx = cx + mr * Math.cos(n._ang); ly = cy + mr * Math.sin(n._ang) - 3; }
+        else { lx = (n.parent._x + n._x) / 2; ly = n._y - 3; }
+        const t = el("text", { x: lx, y: ly, class: "support", "text-anchor": "middle" }); t.textContent = (+n.length).toFixed(3); scene.appendChild(t);
+      });
     }
     // scale bar (phylogram only — branch x-positions are proportional there)
     if (opt.scale && layout === "phylo" && maxLen > 0) {
@@ -177,9 +257,30 @@ export function mountViewer(container, initialData) {
       const t = el("text", { x: x0 + barW / 2, y: yb + 15, class: "support", "text-anchor": "middle" });
       t.textContent = String(dist); scene.appendChild(t);
     }
+    if (radial && pendingCenter) {
+      pendingCenter = false;
+      const w = $("wrap").clientWidth || 900, h = $("wrap").clientHeight || 600;
+      view.x = w / 2 - cx * view.k; view.y = h / 2 - cy * view.k;
+    }
     applyView();
     drawLegend();
   }
+  // Place a leaf/collapsed label. In radial mode `coord` is the label radius
+  // (text is rotated to the node's angle, flipped on the left half); in linear
+  // mode `coord` is the label's x.
+  function placeLabel(n, str, coord, cls, fs) {
+    let t;
+    if (radial) {
+      const x = cx + coord * Math.cos(n._ang), y = cy + coord * Math.sin(n._ang);
+      let deg = n._ang * 180 / Math.PI, anchor = "start";
+      if (Math.cos(n._ang) < 0) { deg += 180; anchor = "end"; }
+      t = el("text", { x, y, class: cls, "font-size": fs, "text-anchor": anchor, "dominant-baseline": "central", transform: `rotate(${deg} ${x} ${y})` });
+    } else {
+      t = el("text", { x: coord, y: SY(n) + 4, class: cls, "font-size": fs });
+    }
+    t.textContent = str; scene.appendChild(t); return t;
+  }
+  function applyColor(n) { if (activeColor) n.color = activeColor; else delete n.color; render(); }
   // round to the nearest 1/2/5 × 10ⁿ, for a tidy scale-bar distance
   function niceNumber(x) {
     if (!(x > 0)) return x;
@@ -286,6 +387,8 @@ export function mountViewer(container, initialData) {
     ID = 0; root = build(structuredClone(curEntry().tree), null);
     staleWarn = false; hlSet = new Set(); $("find").value = "";
     view = { k: 1, x: 40, y: 20 };
+    if (layout === "radial") pendingCenter = true;
+    if ($("supCollapse")) { $("supCollapse").value = 0; $("supVal").textContent = "0"; }
     const sel = $("selT"); if ([...sel.options].some((o) => +o.value === i)) sel.value = i;
     navCounter(); updateMeta(); render();
   }
@@ -373,6 +476,29 @@ export function mountViewer(container, initialData) {
     const b = new Blob([s], { type: "image/svg+xml" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = exportTitle() + ".svg"; a.click();
   }
+  function exportPng() {
+    const { svg: s, w, h } = serializeSvgInlined();
+    const scale = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
+    const img = new Image();
+    const url = URL.createObjectURL(new Blob([s], { type: "image/svg+xml;charset=utf-8" }));
+    img.onload = () => {
+      const cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+      const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
+      const ctx = cv.getContext("2d"); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, 0, 0, cw, ch); URL.revokeObjectURL(url);
+      cv.toBlob((bl) => { const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = exportTitle() + ".png"; a.click(); }, "image/png");
+    };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
+  }
+  // Centre the viewport on the first search match (search only highlights otherwise).
+  function centerOnMatch() {
+    if (!hlSet.size) return;
+    const m = leaves(root).find((n) => matchHL(n));
+    if (!m) return;
+    const w = $("wrap").clientWidth || 900, h = $("wrap").clientHeight || 600;
+    view.x = w / 2 - SX(m) * view.k; view.y = h / 2 - SY(m) * view.k; applyView();
+  }
   function exportPdf() {
     const btn = $("expPdf"), label = btn.textContent;
     btn.textContent = "Rendering…"; btn.disabled = true;
@@ -411,22 +537,110 @@ export function mountViewer(container, initialData) {
   // ---------- static control wiring (once) ----------
   $("segLayout").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    [...e.currentTarget.children].forEach((x) => x.classList.remove("on")); b.classList.add("on"); layout = b.dataset.v;
-    $("rowScale").style.display = layout === "phylo" ? "flex" : "none"; render();
+    if (b.dataset.v === layout) return;
+    setLayout(b.dataset.v);
+    view = { k: 1, x: 40, y: 20 };   // refit: previous pan/zoom won't suit a new layout
+    render();
   });
   $("vspace").oninput = (e) => { vspace = +e.target.value; render(); };
   $("fsize").oninput = (e) => { fsize = +e.target.value; render(); };
+  // branch line thickness — drives the --bw CSS var the .branch rule reads
+  const applyLineW = (v) => svg.style.setProperty("--bw", v);
+  $("lineW").oninput = (e) => applyLineW(e.target.value);
+  applyLineW($("lineW").value);
   const chk = (id, k) => { $(id).onchange = (e) => { opt[k] = e.target.checked; render(); }; };
   chk("tSupport", "support"); chk("tLen", "len"); chk("tInt", "intl"); chk("tAlign", "align"); chk("tScale", "scale");
   $("tLoss").onchange = (e) => { showLoss = e.target.checked; render(); };
-  $("find").oninput = (e) => { hlSet = new Set(e.target.value.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)); render(); };
-  $("rerootMode").onchange = (e) => { rerootOn = e.target.checked; svg.classList.toggle("reroot", rerootOn); };
+  $("find").oninput = (e) => { hlSet = new Set(e.target.value.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)); render(); centerOnMatch(); };
+  // Only one branch-click mode is active at a time; enabling one clears the others.
+  function setMode(mode) {
+    rerootOn = mode === "reroot"; colorOn = mode === "color"; collapseOn = mode === "collapse";
+    $("rerootMode").checked = rerootOn; $("colorMode").checked = colorOn; $("collapseMode").checked = collapseOn;
+    svg.classList.toggle("reroot", rerootOn);
+    svg.classList.toggle("coloring", colorOn);
+    svg.classList.toggle("collapsing", collapseOn);
+  }
+  $("rerootMode").onchange = (e) => setMode(e.target.checked ? "reroot" : null);
+  $("collapseMode").onchange = (e) => setMode(e.target.checked ? "collapse" : null);
+
+  // ---------- colour palette ----------
+  function buildPalette() {
+    const p = $("palette"); if (!p || p.childElementCount) return;
+    const swatches = [];
+    const select = (sw, color) => {
+      activeColor = color;
+      swatches.forEach((s) => s.classList.toggle("on", s === sw));
+      setMode("color");   // picking a swatch enters colour mode (and clears reroot/collapse)
+    };
+    PALETTE.forEach((color) => {
+      const sw = document.createElement("span");
+      sw.className = "sw"; sw.style.background = color; sw.title = color;
+      sw.onclick = () => select(sw, color);
+      p.appendChild(sw); swatches.push(sw);
+    });
+    const clr = document.createElement("span");
+    clr.className = "sw clear"; clr.textContent = "✕"; clr.title = "Clear colour";
+    clr.onclick = () => select(clr, null);
+    p.appendChild(clr); swatches.push(clr);
+    if (swatches[0]) { activeColor = PALETTE[0]; swatches[0].classList.add("on"); }
+  }
+  buildPalette();
+  $("colorMode").onchange = (e) => setMode(e.target.checked ? "color" : null);
+
+  // ---------- collapse by support threshold ----------
+  $("supCollapse").oninput = (e) => {
+    const thr = +e.target.value; $("supVal").textContent = thr;
+    each(root, (n) => {
+      if (!n.parent || !n.children.length) return;
+      if (n.support != null && +n.support < thr) n.collapsed = true;
+      else if (n.support != null) n.collapsed = false;
+    });
+    render();
+  };
+
+  // ---------- midpoint rooting ----------
+  function farthestLeaf(from) {
+    let best = from, bestD = -1;
+    const seen = new Set();
+    (function dfs(n, prev, d) {
+      seen.add(n);
+      if (!n.children.length && !n.isLoss && d > bestD) { bestD = d; best = n; }
+      const nbrs = [n.parent, ...n.children].filter(Boolean);
+      for (const m of nbrs) if (m !== prev && !seen.has(m)) dfs(m, n, d + (m === n.parent ? (n.length || 0) : (m.length || 0)));
+    })(from, null, 0);
+    return { leaf: best, dist: bestD };
+  }
+  function pathBetween(a, b) {
+    // ancestor chains → path a..b as an ordered node list
+    const up = (x) => { const c = []; for (let p = x; p; p = p.parent) c.push(p); return c; };
+    const ca = up(a), cb = up(b), setb = new Map(cb.map((n, i) => [n, i]));
+    let lca = null, ia = 0; for (; ia < ca.length; ia++) if (setb.has(ca[ia])) { lca = ca[ia]; break; }
+    const ib = setb.get(lca);
+    return ca.slice(0, ia + 1).concat(cb.slice(0, ib).reverse());
+  }
+  function midpointRoot() {
+    if (!treeHasLengths(root)) { flash($("midpoint"), "needs branch lengths"); return; }
+    const a = farthestLeaf(root).leaf, { leaf: b } = farthestLeaf(a);
+    const path = pathBetween(a, b);
+    let total = 0; for (let i = 1; i < path.length; i++) total += edgeLen(path[i - 1], path[i]);
+    const half = total / 2;
+    let acc = 0;
+    for (let i = 1; i < path.length; i++) {
+      const seg = edgeLen(path[i - 1], path[i]);
+      if (acc + seg >= half) { const node = path[i].parent === path[i - 1] ? path[i] : path[i - 1]; if (node.parent) doReroot(node); break; }
+      acc += seg;
+    }
+  }
+  function edgeLen(x, y) { return (x.parent === y ? x.length : y.length) || 0; }
+  function flash(btn, msg) { const t = btn.textContent; btn.textContent = msg; setTimeout(() => (btn.textContent = t), 1500); }
+  $("midpoint").onclick = midpointRoot;
   $("ladder").onclick = () => { (function lad(n) { n.children.sort((a, b) => countLeaves(a) - countLeaves(b)); n.children.forEach(lad); })(root); render(); };
   $("expandAll").onclick = () => { each(root, (n) => n.collapsed = false); render(); };
   $("reset").onclick = () => loadTree(curIdx);
   // NB: the light/dark toggle is a shell-level control wired in app.js, so it
   // works before any tree is loaded (this module only mounts once a file opens).
   $("expSvg").onclick = exportSvg;
+  $("expPng").onclick = exportPng;
   $("expPdf").onclick = exportPdf;
   $("expNwk").onclick = copyNewick;
 
@@ -450,13 +664,13 @@ export function mountViewer(container, initialData) {
     isRecon = DATA.type === "reconciliation";
     TREES = Array.isArray(DATA.trees) ? DATA.trees
       : [{ name: (DATA.meta && DATA.meta.title) || (isRecon ? "reconciliation" : "tree"), tree: DATA.tree, score: DATA.meta && DATA.meta.score, dups: DATA.meta && DATA.meta.dups, losses: DATA.meta && DATA.meta.losses }];
-    curIdx = 0; staleWarn = false; hlSet = new Set(); rerootOn = false;
+    curIdx = 0; staleWarn = false; hlSet = new Set();
+    setMode(null);   // clear reroot / colour / collapse click-modes
     filtered = TREES.map((_, i) => i);
     $("rowLoss").style.display = isRecon ? "flex" : "none";
     if (!isRecon) $("legend").style.display = "none";
     // Default to phylogram when the first tree has branch lengths, cladogram otherwise.
     setLayout(TREES.length && treeHasLengths(TREES[0].tree) ? "phylo" : "clado");
-    $("rerootMode").checked = false; svg.classList.remove("reroot");
     setupNav();
     loadTree(0);
   }

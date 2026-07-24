@@ -28,7 +28,12 @@ body{font:13px/1.45 var(--font-sans);
      color:var(--ink);background:var(--bg);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
 header{display:flex;align-items:center;gap:14px;padding:9px 14px;border-bottom:1px solid var(--line);
   background:var(--panel);border-top:3px solid var(--clay-500)}
-header .title{font-weight:700;text-transform:uppercase;letter-spacing:.01em;font-size:13px}
+header .brand{font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:13px;
+  color:var(--clay-500);white-space:nowrap}
+:root[data-theme="dark"] header .brand{color:var(--clay-400)}
+header .title{font-weight:600;font-size:12.5px;font-family:var(--font-mono);color:var(--ink);
+  max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .title:not(:empty){padding-left:12px;border-left:1px solid var(--line)}
 header .meta{color:var(--muted);font-size:12px;font-family:var(--font-mono)}
 header .meta b{color:var(--ink);font-weight:600}
 .spacer{flex:1}
@@ -68,7 +73,7 @@ button.act.warn:hover{background:var(--dup);color:#fff}
 svg{width:100%;height:100%;display:block;cursor:grab;background:var(--bg)}
 svg.grab{cursor:grabbing}
 svg.reroot{cursor:crosshair}
-.branch{stroke:var(--branch);stroke-width:1.5;fill:none}
+.branch{stroke:var(--branch);stroke-width:var(--bw,1.5);fill:none}
 .branch.hit{stroke:transparent;stroke-width:9;cursor:pointer}
 .branch.sel{stroke:var(--sel);stroke-width:2.5}
 .lossbranch{stroke:var(--loss);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
@@ -89,6 +94,14 @@ svg.reroot{cursor:crosshair}
 .legend div{display:flex;align-items:center;gap:8px;margin:4px 0}
 .sw{width:13px;height:13px;flex:none;display:inline-block}
 .hint{color:var(--muted);font-size:11px;margin-top:7px;line-height:1.45}
+.palette{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
+.palette .sw{width:20px;height:20px;border-radius:5px;cursor:pointer;border:2px solid transparent;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.palette .sw.on{border-color:var(--ink)}
+.palette .sw.clear{display:flex;align-items:center;justify-content:center;background:var(--bg);
+  color:var(--muted);font-size:13px;box-shadow:inset 0 0 0 1px var(--line)}
+svg.coloring{cursor:crosshair}
+svg.collapsing{cursor:cell}
 kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;font-size:11px;
   background:var(--bg);font-family:var(--font-mono)}
 
