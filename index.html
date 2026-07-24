@@ -3,7 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Clann tree viewer</title>
+<title>Clann Tree Viewer — free online phylogenetic tree viewer (Newick, NEXUS, NHX)</title>
+<meta name="description" content="Free, browser-based phylogenetic tree viewer. Open Newick, NEXUS, or NHX trees to explore, reroot, collapse, colour, rename, and export as SVG, PNG or PDF — in cladogram, phylogram, and radial layouts. Nothing is uploaded; everything runs in your browser.">
+<meta name="keywords" content="tree viewer, phylogeny viewer, phylogenetic tree viewer, phylogenetics, Newick viewer, NEXUS viewer, NHX viewer, cladogram, phylogram, radial tree, dendrogram, tree of life, reconciliation, online tree viewer">
+<meta name="author" content="CreeveyLab">
+<link rel="canonical" href="https://chriscreevey.github.io/clann-tree-viewer/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Clann Tree Viewer">
+<meta property="og:title" content="Clann Tree Viewer — online phylogenetic tree viewer">
+<meta property="og:description" content="Open Newick, NEXUS, or NHX trees in your browser — reroot, collapse, colour, rename, and export. Cladogram, phylogram, and radial views. Nothing leaves your machine.">
+<meta property="og:url" content="https://chriscreevey.github.io/clann-tree-viewer/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Clann Tree Viewer — online phylogenetic tree viewer">
+<meta name="twitter:description" content="Open Newick, NEXUS, or NHX trees in your browser — reroot, collapse, colour, rename, and export.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Clann Tree Viewer",
+  "url": "https://chriscreevey.github.io/clann-tree-viewer/",
+  "applicationCategory": "BioinformaticsApplication",
+  "operatingSystem": "Any (modern web browser)",
+  "browserRequirements": "Requires JavaScript",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "description": "Free browser-based phylogenetic tree viewer for Newick, NEXUS, and NHX files. Reroot, collapse, colour, rename, and export trees as SVG, PNG or PDF in cladogram, phylogram, and radial layouts.",
+  "keywords": "phylogenetic tree viewer, phylogeny, Newick, NEXUS, NHX, cladogram, phylogram, radial tree, dendrogram",
+  "author": { "@type": "Organization", "name": "CreeveyLab", "url": "https://www.creeveylab.org/" },
+  "codeRepository": "https://github.com/ChrisCreevey/clann-tree-viewer"
+}
+</script>
 <link rel="stylesheet" href="styles/viewer.css">
 </head>
 <body>
@@ -104,14 +132,27 @@
       <div class="legend" id="legend"></div>
       <div id="drop">Drop a Newick / NHX file to view</div>
       <div id="empty">
-        <h2>Clann tree viewer</h2>
-        <div>Open a tree file, drag one in, or paste Newick text — reroot, collapse, and export, all in your browser.<br>Nothing is uploaded to a server.</div>
+        <h2>Clann Tree Viewer</h2>
+        <div>A free, browser-based phylogenetic tree viewer for Newick, NEXUS, and NHX files. Open a tree, drag one in, or paste it — then explore, reroot, collapse, colour, rename, and export as SVG, PNG or PDF in cladogram, phylogram, or radial layouts.<br>Everything runs locally; nothing is uploaded to a server.</div>
         <div class="exts">.nwk · .newick · .tree · .ph · .phy · .nhx · .nex · .nexus · .txt</div>
         <button id="emptyOpen">Open file…</button>
       </div>
       <div class="err" id="err"></div>
     </div>
   </main>
+  <footer id="foot">
+    <span class="foot-l">
+      <strong>Clann Tree Viewer</strong><span class="sep">·</span>developed by
+      <a href="https://www.creeveylab.org/" target="_blank" rel="noopener">CreeveyLab</a>
+    </span>
+    <span class="foot-r">
+      <a href="https://github.com/ChrisCreevey/clann-tree-viewer" target="_blank" rel="noopener" title="Source code on GitHub">GitHub</a>
+      <a class="like" id="likeBtn" href="https://github.com/ChrisCreevey/clann-tree-viewer" target="_blank" rel="noopener"
+         title="Like it? Star the repository on GitHub (opens GitHub — a free account is needed to star)">
+        <span class="like-ico">★</span> Like it?<span class="like-count" id="starCount" hidden></span>
+      </a>
+    </span>
+  </footer>
 </div>
 <input type="file" id="fileInput" accept=".nwk,.newick,.tree,.ph,.phy,.nhx,.nex,.nexus,.txt,text/plain" style="display:none">
 <script type="module" src="src/app.js"></script>

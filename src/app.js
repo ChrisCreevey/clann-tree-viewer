@@ -84,6 +84,16 @@ wrap.addEventListener("drop", (e) => {
   openFile(f);
 });
 
+// --- footer: show the repo's live star count next to the "Like it?" button ---
+// (Read-only, unauthenticated GitHub API — fails silently if rate-limited/offline.)
+fetch("https://api.github.com/repos/ChrisCreevey/clann-tree-viewer")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((d) => {
+    const c = document.getElementById("starCount");
+    if (c && d && d.stargazers_count > 0) { c.textContent = d.stargazers_count; c.hidden = false; }
+  })
+  .catch(() => {});
+
 // --- optional deep link: index.html?tree=examples/reconciled.nhx ---
 const q = new URLSearchParams(location.search).get("tree");
 if (q) {
