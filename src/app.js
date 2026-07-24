@@ -27,16 +27,22 @@ function loadData(data) {
   else handle = mountViewer(container, data);
 }
 
-async function openFile(file) {
-  if (!file) return;
+function openText(text, name) {
   try {
-    const text = await file.text();
-    const data = parse(text, { filename: file.name });
+    const data = parse(text, { filename: name });
     loadData(data);
   } catch (err) {
     const where = err && err.line ? ` (line ${err.line}, col ${err.col})` : "";
-    showError(`Couldn't parse ${file.name}${where}: ${err && err.message ? err.message : err}`);
+    showError(`Couldn't parse ${name}${where}: ${err && err.message ? err.message : err}`);
   }
+}
+
+async function openFile(file) {
+  if (!file) return;
+  let text;
+  try { text = await file.text(); }
+  catch { showError(`Couldn't read ${file.name}`); return; }
+  openText(text, file.name);
 }
 
 // --- file input / buttons ---
@@ -48,6 +54,16 @@ fileInput.addEventListener("change", (e) => {
 const pick = () => fileInput.click();
 document.getElementById("uploadBtn").addEventListener("click", pick);
 document.getElementById("emptyOpen").addEventListener("click", pick);
+
+// --- paste Newick text anywhere (except into a field) to load it ---
+window.addEventListener("paste", (e) => {
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return; // don't hijack form paste
+  const text = e.clipboardData && e.clipboardData.getData("text");
+  if (!text || !/\(/.test(text) || !/\)/.test(text)) return; // needs to at least look like a tree
+  e.preventDefault();
+  openText(text, "pasted tree");
+});
 
 // --- light/dark toggle (shell-level: active even before a tree is loaded) ---
 document.getElementById("themeBtn").addEventListener("click", () => {

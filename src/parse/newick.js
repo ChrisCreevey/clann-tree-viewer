@@ -144,10 +144,14 @@ export function parseNewickForest(text) {
     skipWs();
     if (i >= n) break;
     if (text[i] === "#") { while (i < n && text[i] !== "\n") i++; continue; } // header/comment line
+    const before = i;
     const root = parseNode();
     skipWs();
     if (i < n && text[i] === ";") i++;
     roots.push(root);
+    // Guard against a stray delimiter (e.g. a leading ')' or ',') that parseNode
+    // can't consume — without this the loop would spin forever on malformed input.
+    if (i === before) throw new ParseError("Unexpected '" + text[i] + "'", i, text);
   }
 
   if (roots.length === 0) throw new ParseError("No tree found", 0, text);

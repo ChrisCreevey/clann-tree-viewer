@@ -86,7 +86,7 @@
         <button class="act warn" id="reset">Reset view</button>
       </details>
 
-      <details class="sect">
+      <details class="sect" open>
         <summary>Export</summary>
         <button class="act" id="expSvg">Download SVG</button>
         <button class="act" id="expPng">Download PNG</button>
@@ -102,15 +102,15 @@
       <div id="drop">Drop a Newick / NHX file to view</div>
       <div id="empty">
         <h2>Clann tree viewer</h2>
-        <div>Open a tree file to explore it — reroot, collapse, and export, all in your browser.<br>Nothing is uploaded to a server.</div>
-        <div class="exts">.nwk · .newick · .tree · .nhx · .txt</div>
+        <div>Open a tree file, drag one in, or paste Newick text — reroot, collapse, and export, all in your browser.<br>Nothing is uploaded to a server.</div>
+        <div class="exts">.nwk · .newick · .tree · .ph · .phy · .nhx · .nex · .nexus · .txt</div>
         <button id="emptyOpen">Open file…</button>
       </div>
       <div class="err" id="err"></div>
     </div>
   </main>
 </div>
-<input type="file" id="fileInput" accept=".nwk,.newick,.tree,.nhx,.txt,text/plain" style="display:none">
+<input type="file" id="fileInput" accept=".nwk,.newick,.tree,.ph,.phy,.nhx,.nex,.nexus,.txt,text/plain" style="display:none">
 <script type="module" src="src/app.js"></script>
 </body>
 </html>

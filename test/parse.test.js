@@ -13,6 +13,7 @@ import { dirname, join } from "node:path";
 import { parse, detectFormat } from "../src/parse/index.js";
 import { parseNewickForest, ParseError } from "../src/parse/newick.js";
 import { parseNhxTags, parseNhxForest } from "../src/parse/nhx.js";
+import { parseNexus, looksLikeNexus } from "../src/parse/nexus.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "fixtures");
@@ -38,6 +39,42 @@ for (const [input, expected] of [
 test("detectFormat", () => {
   assert.equal(detectFormat("(A,B);"), "newick");
   assert.equal(detectFormat("(A[&&NHX:S=A:D=N],B);"), "nhx");
+  assert.equal(detectFormat("#NEXUS\nbegin trees;\n tree t = (A,B);\nend;"), "nexus");
+});
+
+// ---- NEXUS ----------------------------------------------------------------
+
+const NEXUS_SAMPLE = `#NEXUS
+begin trees;
+  translate
+    1 Homo_sapiens,
+    2 Pan_troglodytes,
+    3 'Mus musculus',
+    4 Rattus_norvegicus;
+  tree tree_one = [&U] ((1:0.1,2:0.2)95:0.3,(3:0.4,4:0.5)80:0.6);
+  tree * tree_two = ((1,3),(2,4));
+end;
+`;
+
+test("looksLikeNexus", () => {
+  assert.equal(looksLikeNexus("#NEXUS\n..."), true);
+  assert.equal(looksLikeNexus("  #nexus\n"), true);
+  assert.equal(looksLikeNexus("(A,B);"), false);
+});
+
+test("NEXUS: translate table, comments, and multiple trees", () => {
+  const d = parse(NEXUS_SAMPLE, { filename: "x.nex" });
+  assert.equal(d.type, "tree");
+  assert.deepEqual(d.trees.map((t) => t.name), ["tree_one", "tree_two"]);
+  const tips = [];
+  (function w(n) { if (!n.children || !n.children.length) tips.push(n.name); else n.children.forEach(w); })(d.trees[0].tree);
+  // translate keys resolved, incl. the quoted label; [&U] comment dropped
+  assert.deepEqual(tips, ["Homo_sapiens", "Pan_troglodytes", "Mus musculus", "Rattus_norvegicus"]);
+  assert.deepEqual(d.trees[0].tree.children.map((c) => c.support), [95, 80]);
+});
+
+test("NEXUS without a TREES block throws", () => {
+  assert.throws(() => parseNexus("#NEXUS\nbegin taxa;\nend;"), /TREES block/);
 });
 
 // ---- NHX tag parsing -------------------------------------------------------

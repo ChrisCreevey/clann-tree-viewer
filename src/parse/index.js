@@ -8,13 +8,15 @@
 
 import { parseNewickForest } from "./newick.js";
 import { parseNhxForest, looksLikeNhx } from "./nhx.js";
+import { parseNexus, looksLikeNexus } from "./nexus.js";
 
 /**
  * Decide how to read a blob of text.
  * @param {string} text
- * @returns {"nhx"|"newick"}
+ * @returns {"nexus"|"nhx"|"newick"}
  */
 export function detectFormat(text) {
+  if (looksLikeNexus(text)) return "nexus";
   return looksLikeNhx(text) ? "nhx" : "newick";
 }
 
@@ -40,6 +42,14 @@ export function parse(text, opts = {}) {
   const ds = opts.datasetName || opts.filename;
   if (ds) meta.dataset = ds;
   if (opts.filename) meta.source = opts.filename;
+
+  if (fmt === "nexus") {
+    const trees = parseNexus(text).map((e, idx) => ({
+      name: e.name || `tree_${idx + 1}`,
+      tree: rawToNode(e.root),
+    }));
+    return { type: "tree", meta, trees };
+  }
 
   if (fmt === "nhx") {
     const trees = parseNhxForest(text);

@@ -13,6 +13,10 @@ You can use the deployed version to visualise trees here: [https://chriscreevey.
 
 ## What's new
 
+- **NEXUS input** — reads the `TREES` block of a NEXUS file, resolving the
+  `translate` table and dropping `[&…]` comments, alongside Newick and NHX.
+- **Paste a tree** — paste Newick text straight into the window (⌘/Ctrl-V) to
+  load it; more extensions accepted (`.ph`, `.phy`, `.nex`, `.nexus`).
 - **Rename tips** — the left box is pre-filled with the current taxa; type or
   paste each new name on the matching line in the right box (or load a
   two-column tab/comma file). Renames apply live, survive tree switches, revert
@@ -40,8 +44,9 @@ current tree's name beside it.
 
 ## Features
 
-- **Formats:** Newick (`.nwk`, `.newick`, `.tree`) and NHX (`.nhx`) — including
-  multi-tree files.
+- **Formats:** Newick (`.nwk`, `.newick`, `.tree`, `.ph`, `.phy`), NHX (`.nhx`),
+  and NEXUS (`.nex`, `.nexus`) — including multi-tree files. Open a file, drag
+  it in, or paste the tree text.
 - **Reconciliation rendering:** duplication (■), speciation (●), and loss (dashed
   ✕ stubs), read straight from NHX `[&&NHX:S=…:D=Y/N]` tags and `*LOST` leaves.
 - **Layouts:** cladogram, phylogram, and radial, with adjustable row spacing,
@@ -102,6 +107,7 @@ src/
   parse/
     newick.js         Structural Newick / NHX-carrier parser
     nhx.js            NHX interpretation (events, species, dup/loss counts)
+    nexus.js          NEXUS TREES block (translate table, comment stripping)
     index.js          detectFormat() + parse() → ViewerData
 examples/             Sample trees
 test/                 Fixture-driven parser tests
