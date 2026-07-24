@@ -161,7 +161,7 @@ export function mountViewer(container, initialData) {
   const el = (t, a) => { const e = document.createElementNS("http://www.w3.org/2000/svg", t); for (const k in a) e.setAttribute(k, a[k]); return e; };
   // Polar geometry state, recomputed each render when in radial mode.
   let radial = false, cx = 0, cy = 0, rMax = 0;
-  const ANG_SPAN = 2 * Math.PI * (350 / 360), ANG0 = -Math.PI / 2;
+  const ANG0 = -Math.PI / 2;
   const SX = (n) => radial ? cx + n._r * Math.cos(n._ang) : n._x;
   const SY = (n) => radial ? cy + n._r * Math.sin(n._ang) : n._y;
   const polar = (r, a) => `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
@@ -179,9 +179,13 @@ export function mountViewer(container, initialData) {
     each(root, (n) => { n._color = n.color || (n.parent && n.parent._color) || null; });
     radial = layout === "radial";
     if (radial) {
+      // Spread tips evenly over the FULL circle. Leaves sit at _y = 0..(n-1)·vspace;
+      // dividing by n·vspace (one extra slot) makes the wrap-around gap equal to the
+      // rest, so a polytomy's children fan out evenly instead of crowding at the seam.
       const yMax = Math.max(1, ...leaves(root).map((n) => n._y));
+      const denom = yMax + vspace;
       rMax = 0;
-      each(root, (n) => { n._ang = ANG0 + (n._y / yMax) * ANG_SPAN; n._r = n._x; rMax = Math.max(rMax, n._x); });
+      each(root, (n) => { n._ang = ANG0 + (n._y / denom) * 2 * Math.PI; n._r = n._x; rMax = Math.max(rMax, n._x); });
       cx = rMax; cy = rMax;
     }
     scene.innerHTML = "";
