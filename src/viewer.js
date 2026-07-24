@@ -29,6 +29,19 @@ export function mountViewer(container, initialData) {
   let renameMap = new Map();   // originalTipName -> displayName
   const PALETTE = ["#C56347", "#D99A2B", "#5F6E33", "#149589", "#3B6EA5", "#7A4FA3", "#B03060", "#8C6D3F"];
 
+  // ---------- name conventions ----------
+  // Newick uses '_' to stand for a space in unquoted names. We store names as
+  // given, but *display* underscores as spaces, and *export* spaces back to
+  // underscores — so a tree round-trips and "Homo_sapiens" reads as "Homo sapiens".
+  const disp = (s) => String(s == null ? "" : s).replace(/_/g, " ");
+  // token for a leaf name in exported Newick: spaces → underscores, plus the
+  // existing guard against characters that are structural in Newick.
+  const newickName = (s) => String(s == null ? "" : s).replace(/ /g, "_").replace(/[(),:;]/g, "_");
+  // Collapse underscores and whitespace to a single key so a search or a rename
+  // matches whichever spelling ("Homo sapiens" / "Homo_sapiens") the user uses.
+  const normName = (s) => String(s == null ? "" : s).toLowerCase().replace(/[_\s]+/g, " ").trim();
+  const keyName = (s) => String(s == null ? "" : s).replace(/^\s+|\s+$/g, "").replace(/[_\s]+/g, "_");
+
   // ---------- model ----------
   function build(n, parent) {
     n.id = ID++; n.parent = parent || null; n.collapsed = false;
@@ -73,30 +86,34 @@ export function mountViewer(container, initialData) {
     return found;
   }
   // ---------- tip renaming ----------
-  // Parse a two-column map: "current<TAB or ,>new", one pair per line. Only
-  // leading/trailing whitespace is trimmed (internal spaces are kept, since a
-  // name may legitimately contain them). Splits on the FIRST separator only.
-  function parseRenameMap(text) {
-    const m = new Map();
-    for (const raw of String(text || "").split(/\r?\n/)) {
-      if (!raw.trim()) continue;
-      const sep = raw.includes("\t") ? "\t" : ",";
-      const i = raw.indexOf(sep);
-      if (i < 0) continue;
-      const from = raw.slice(0, i).replace(/^\s+|\s+$/g, "");
-      const to = raw.slice(i + 1).replace(/^\s+|\s+$/g, "");
-      if (from && to) m.set(from, to);
+  // Tips of the current tree, in display order (real leaves, not losses).
+  function tipNodes() { const a = []; each(root, (n) => { if (!n.children.length && !n.isLoss) a.push(n); }); return a; }
+  // Rebuild renameMap (keyed by keyName of the original tip name) from the two
+  // aligned text boxes: original name on line i, new name on line i.
+  function readRenameBoxes() {
+    const os = $("renameOrig").value.split(/\r?\n/), ns = $("renameNew").value.split(/\r?\n/);
+    renameMap = new Map();
+    for (let i = 0; i < os.length; i++) {
+      const o = (os[i] || "").replace(/^\s+|\s+$/g, ""), nw = (ns[i] || "").replace(/^\s+|\s+$/g, "");
+      if (o && nw) renameMap.set(keyName(o), nw);
     }
-    return m;
   }
-  // Re-apply the current rename map to the live tree (exact, case-sensitive match
-  // on the original tip name) and update the matched counter.
+  // Fill the left box with the current tree's original taxa, and the right box
+  // with any new names already known for them (aligned line-for-line).
+  function refreshRenameBoxes() {
+    if (!$("renameOrig")) return;
+    const tips = tipNodes();
+    $("renameOrig").value = tips.map((n) => n._orig || "").join("\n");
+    $("renameNew").value = tips.map((n) => renameMap.get(keyName(n._orig)) || "").join("\n");
+  }
+  // Apply the current rename map to the live tree and update the matched counter.
+  // Match is on keyName(original), so "Homo sapiens"/"Homo_sapiens" are equivalent.
   function applyRenames() {
     if (!root) return;
-    each(root, (n) => { if (!n.children.length) n.name = renameMap.has(n._orig) ? renameMap.get(n._orig) : n._orig; });
+    each(root, (n) => { if (!n.children.length) { const k = keyName(n._orig); n.name = renameMap.has(k) ? renameMap.get(k) : n._orig; } });
     const el = $("renameCount"); if (!el) return;
     if (!renameMap.size) { el.textContent = ""; return; }
-    const present = new Set(); each(root, (n) => { if (!n.children.length) present.add(n._orig); });
+    const present = new Set(); each(root, (n) => { if (!n.children.length) present.add(keyName(n._orig)); });
     let matched = 0; renameMap.forEach((_, k) => { if (present.has(k)) matched++; });
     el.textContent = matched + " of " + renameMap.size + " names matched";
   }
@@ -194,7 +211,7 @@ export function mountViewer(container, initialData) {
         if (showLoss) {
           scene.appendChild(el("circle", { cx: X, cy: Y, r: 3.2, fill: "none", stroke: "var(--loss)", "stroke-width": 1.4 }));
           const t = el("text", { x: X + 7, y: Y + 3.5, class: "intlabel", "font-size": Math.max(9, fsize - 2) });
-          t.textContent = "✕ " + (n.species || "loss"); t.style.fill = "var(--loss)"; scene.appendChild(t);
+          t.textContent = "✕ " + (disp(n.species) || "loss"); t.style.fill = "var(--loss)"; scene.appendChild(t);
         }
         return;
       }
@@ -219,14 +236,14 @@ export function mountViewer(container, initialData) {
         if (n._color) tri.style.fill = n._color;
         tri.addEventListener("click", (ev) => { ev.stopPropagation(); n.collapsed = false; render(); });
         scene.appendChild(tri);
-        placeLabel(n, (n.name || ("▸ " + nleaf + " taxa")), radial ? n._r + far + 6 : X + far + 6, "leaflabel", fsize);
+        placeLabel(n, (n.name ? disp(n.name) : ("▸ " + nleaf + " taxa")), radial ? n._r + far + 6 : X + far + 6, "leaflabel", fsize);
         return;
       }
       if (n.isLeaf) {
         if (radial) {
           const lr = (opt.align ? rMax : n._r) + 7;
           if (opt.align && lr > n._r + 7) scene.appendChild(el("path", { d: `M${polar(n._r, n._ang)} L${polar(lr - 3, n._ang)}`, class: "lossbranch" }));
-          const t = placeLabel(n, n.name || "?", lr, "leaflabel", fsize);
+          const t = placeLabel(n, disp(n.name) || "?", lr, "leaflabel", fsize);
           if (hlSet.size) t.classList.add(matchHL(n) ? "hl" : "dim");
           t.addEventListener("mousemove", (e) => showTip(e, n, false));
           t.addEventListener("mouseleave", hideTip);
@@ -234,7 +251,7 @@ export function mountViewer(container, initialData) {
           const lx = opt.align ? tipX + 8 : X + 7;
           if (opt.align && lx > X + 7) scene.appendChild(el("path", { d: `M${X},${Y} H${lx - 3}`, class: "lossbranch" }));
           const t = el("text", { x: lx, y: Y + fsize * 0.34, class: "leaflabel", "font-size": fsize });
-          t.textContent = n.name || "?";
+          t.textContent = disp(n.name) || "?";
           if (hlSet.size) { if (matchHL(n)) t.classList.add("hl"); else t.classList.add("dim"); }
           t.addEventListener("mousemove", (e) => showTip(e, n, false));
           t.addEventListener("mouseleave", hideTip);
@@ -261,7 +278,7 @@ export function mountViewer(container, initialData) {
           const t = el("text", { x: X - 4, y: Y - 5, class: "support", "text-anchor": "end" }); t.textContent = n.support; scene.appendChild(t);
         }
         if (opt.intl && n.name) {
-          const t = el("text", { x: X + 5, y: Y - 5, class: "intlabel" }); t.textContent = n.name; scene.appendChild(t);
+          const t = el("text", { x: X + 5, y: Y - 5, class: "intlabel" }); t.textContent = disp(n.name); scene.appendChild(t);
         }
       }
     });
@@ -320,7 +337,7 @@ export function mountViewer(container, initialData) {
     return nf * Math.pow(10, e);
   }
   function selectBranch() { container.querySelectorAll(".branch.sel").forEach((e) => e.classList.remove("sel")); }
-  function matchHL(n) { const s = (n.name || "") + " " + (n.species || ""); return [...hlSet].some((q) => s.toLowerCase().includes(q)); }
+  function matchHL(n) { const s = normName([n.name, n._orig, n.species].filter(Boolean).join(" ")); return [...hlSet].some((q) => s.includes(q)); }
 
   // ---------- reroot ----------
   function doReroot(node) {
@@ -344,7 +361,7 @@ export function mountViewer(container, initialData) {
 
   // ---------- newick ----------
   function toNewick(n) {
-    if (!n.children.length) return (n.name || "").replace(/[(),:;]/g, "_") + (n.length != null ? ":" + n.length : "");
+    if (!n.children.length) return newickName(n.name) + (n.length != null ? ":" + n.length : "");
     return "(" + n.children.filter((c) => !c.isLoss).map(toNewick).join(",") + ")" + (n.support != null ? n.support : "") + (n.length != null ? ":" + n.length : "");
   }
 
@@ -364,7 +381,7 @@ export function mountViewer(container, initialData) {
   function showTip(e, n, isBranch) {
     const r = $("wrap").getBoundingClientRect();
     let h = "";
-    if (n.isLeaf || !n.children.length) { h = `<b>${n.name || "?"}</b>`; if (n.species) h += `<br>species: <b>${n.species}</b>`; }
+    if (n.isLeaf || !n.children.length) { h = `<b>${disp(n.name) || "?"}</b>`; if (n.species) h += `<br>species: <b>${disp(n.species)}</b>`; }
     else {
       h = `<span class="ev" style="color:${n.event === "duplication" ? "var(--dup)" : "var(--spec)"}">${(n.event || "node").toUpperCase()}</span>`;
       h += `<br>${countLeaves(n)} descendant tips`; if (n.support != null) h += `<br>support: ${n.support}`;
@@ -421,7 +438,7 @@ export function mountViewer(container, initialData) {
     if (layout === "radial") pendingCenter = true;
     if ($("supCollapse")) { $("supCollapse").value = 0; $("supVal").textContent = "0"; }
     const sel = $("selT"); if ([...sel.options].some((o) => +o.value === i)) sel.value = i;
-    applyRenames();   // re-apply the map to this freshly-built tree
+    refreshRenameBoxes(); applyRenames();   // show this tree's taxa + re-apply the map
     navCounter(); updateMeta(); render();
   }
   function stepTree(d) {
@@ -431,7 +448,7 @@ export function mountViewer(container, initialData) {
   }
   function applyTreeFilter(q) {
     const box = $("treeSearch");
-    q = (q || "").trim().toLowerCase();
+    q = normName(q);
     filtered = !q ? TREES.map((_, i) => i)
       : TREES.map((_, i) => i).filter((i) => TREES[i]._search.includes(q) || String(i + 1) === q);
     box.classList.toggle("hit", !!q && filtered.length > 0);
@@ -445,10 +462,10 @@ export function mountViewer(container, initialData) {
       const taxa = new Set();
       (function walk(n) {
         if (!n) return;
-        if (!n.children || !n.children.length) { if (n.name) taxa.add(String(n.name).toLowerCase()); if (n.species) taxa.add(String(n.species).toLowerCase()); }
+        if (!n.children || !n.children.length) { if (n.name) taxa.add(normName(n.name)); if (n.species) taxa.add(normName(n.species)); }
         else (n.children || []).forEach(walk);
       })(e.tree);
-      e._search = String(e.name || ("tree_" + i)).toLowerCase() + " " + [...taxa].join(" ");
+      e._search = normName(e.name || ("tree_" + i)) + " " + [...taxa].join(" ");
     });
     if (TREES.length < 2) { nav.style.display = "none"; return; }
     nav.style.display = "inline-flex";
@@ -583,25 +600,39 @@ export function mountViewer(container, initialData) {
   const chk = (id, k) => { $(id).onchange = (e) => { opt[k] = e.target.checked; render(); }; };
   chk("tSupport", "support"); chk("tLen", "len"); chk("tInt", "intl"); chk("tAlign", "align"); chk("tScale", "scale");
   $("tLoss").onchange = (e) => { showLoss = e.target.checked; render(); };
-  $("find").oninput = (e) => { hlSet = new Set(e.target.value.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)); render(); centerOnMatch(); };
+  $("find").oninput = (e) => { hlSet = new Set(e.target.value.split(",").map((s) => normName(s)).filter(Boolean)); render(); centerOnMatch(); };
 
   // ---------- rename tips ----------
-  const runRename = () => { renameMap = parseRenameMap($("renameMap").value); applyRenames(); render(); };
+  const runRename = () => { readRenameBoxes(); applyRenames(); render(); };
   $("applyRename").onclick = runRename;
-  $("clearRename").onclick = () => { renameMap = new Map(); $("renameMap").value = ""; applyRenames(); render(); };
+  $("clearRename").onclick = () => { renameMap = new Map(); $("renameNew").value = ""; applyRenames(); render(); };
+  // A two-column (tab/comma) file fills the right box, matched by original name.
+  function loadPairFile(text) {
+    const pairs = new Map();
+    for (const raw of String(text || "").split(/\r?\n/)) {
+      if (!raw.trim()) continue;
+      const sep = raw.includes("\t") ? "\t" : ",";
+      const i = raw.indexOf(sep); if (i < 0) continue;
+      const from = raw.slice(0, i).replace(/^\s+|\s+$/g, ""), to = raw.slice(i + 1).replace(/^\s+|\s+$/g, "");
+      if (from && to) pairs.set(keyName(from), to);
+    }
+    const origLines = $("renameOrig").value.split(/\r?\n/);
+    $("renameNew").value = origLines.map((l) => pairs.get(keyName(l)) || "").join("\n");
+    runRename();
+  }
   $("loadRename").onclick = () => $("renameFile").click();
   $("renameFile").addEventListener("change", async (e) => {
     const f = e.target.files && e.target.files[0]; e.target.value = "";
-    if (f) { $("renameMap").value = await f.text(); runRename(); }
+    if (f) loadPairFile(await f.text());
   });
-  const rbox = $("renameMap");
+  const rbox = $("renameNew");
   rbox.addEventListener("dragover", (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { e.preventDefault(); rbox.classList.add("drop"); } });
   rbox.addEventListener("dragleave", () => rbox.classList.remove("drop"));
   rbox.addEventListener("drop", async (e) => {
     if (!(e.dataTransfer && [...e.dataTransfer.types].includes("Files"))) return;
     e.preventDefault(); e.stopPropagation(); rbox.classList.remove("drop");
     const f = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f) { rbox.value = await f.text(); runRename(); }
+    if (f) loadPairFile(await f.text());
   });
   // Only one branch-click mode is active at a time; enabling one clears the others.
   function setMode(mode) {
@@ -716,7 +747,7 @@ export function mountViewer(container, initialData) {
     TREES = Array.isArray(DATA.trees) ? DATA.trees
       : [{ name: (DATA.meta && DATA.meta.title) || (isRecon ? "reconciliation" : "tree"), tree: DATA.tree, score: DATA.meta && DATA.meta.score, dups: DATA.meta && DATA.meta.dups, losses: DATA.meta && DATA.meta.losses }];
     curIdx = 0; staleWarn = false; hlSet = new Set();
-    renameMap = new Map(); if ($("renameMap")) { $("renameMap").value = ""; $("renameCount").textContent = ""; }
+    renameMap = new Map(); if ($("renameNew")) { $("renameNew").value = ""; $("renameCount").textContent = ""; }
     setMode(null);   // clear reroot / colour / collapse click-modes
     filtered = TREES.map((_, i) => i);
     $("rowLoss").style.display = isRecon ? "flex" : "none";

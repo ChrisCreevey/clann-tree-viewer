@@ -13,10 +13,13 @@ You can use the deployed version to visualise trees here: [https://chriscreevey.
 
 ## What's new
 
-- **Rename tips** — paste (or drop/upload) a two-column map of `current` → `new`
-  names, tab- or comma-separated. Matching is exact on the original tip label;
-  renames apply live, survive tree switches, revert with one click, and are
-  written into the exported Newick.
+- **Rename tips** — the left box is pre-filled with the current taxa; type or
+  paste each new name on the matching line in the right box (or load a
+  two-column tab/comma file). Renames apply live, survive tree switches, revert
+  with one click, and are written into the exported Newick.
+- **Underscore / space convention** — following Newick, `_` in a name is shown as
+  a space and exported back to `_`, so `Homo_sapiens` reads as “Homo sapiens”.
+  Searching matches either spelling.
 - **Radial layout** — a circular view with the root at the centre and tips on the
   outer ring, alongside the existing cladogram and phylogram modes.
 - **Clade colouring** — pick from a palette and click a branch to colour that

@@ -46,12 +46,15 @@
       <input type="search" id="find" placeholder="highlight taxa (comma-sep)…">
 
       <h4>Rename tips</h4>
-      <textarea id="renameMap" rows="4" placeholder="current_name&#9;New name&#10;one pair per line…"></textarea>
+      <div class="renamecols">
+        <textarea id="renameOrig" wrap="off" spellcheck="false" rows="6" title="Current taxa (original spelling)"></textarea>
+        <textarea id="renameNew" wrap="off" spellcheck="false" rows="6" placeholder="new names…" title="New name on the matching line — blank keeps the original"></textarea>
+      </div>
       <button class="act" id="applyRename">Apply renames</button>
       <button class="act" id="loadRename">Load map file…</button>
       <div class="hint" id="renameCount"></div>
       <button class="act warn" id="clearRename">Clear renames</button>
-      <div class="hint">Two columns — current name, then new name — one pair per line, tab- or comma-separated. Drop a file on the box to load it.</div>
+      <div class="hint">Left column lists the current taxa. Type or paste each new name on the matching line in the right column; a blank line keeps the original. Or load a two-column (tab/comma) file.</div>
       <input type="file" id="renameFile" accept=".tsv,.csv,.txt,text/plain" style="display:none">
 
       <h4>Colour</h4>
