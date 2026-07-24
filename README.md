@@ -50,7 +50,9 @@ current tree's name beside it.
 - **Reconciliation rendering:** duplication (■), speciation (●), and loss (dashed
   ✕ stubs), read straight from NHX `[&&NHX:S=…:D=Y/N]` tags and `*LOST` leaves.
 - **Layouts:** cladogram, phylogram, and radial, with adjustable row spacing,
-  font size, and branch-line thickness.
+  font size, and branch-line thickness. Cladograms align every tip on the same
+  outer level (dendrogram style), so it's clear at a glance there are no branch
+  lengths.
 - **Interactive:** reroot (interactive or midpoint) on any branch, collapse/expand
   clades (by click or support threshold), ladderize, highlight taxa, zoom & pan.
 - **Colouring:** click-to-colour clades from a palette, inherited down each

@@ -137,12 +137,21 @@ export function mountViewer(container, initialData) {
     })(root);
     const md = Math.max(1, maxDepth(root));
     let maxLen = 0; (function cl(n, acc) { n._cl = acc; maxLen = Math.max(maxLen, acc); if (!n.collapsed) n.children.forEach((c) => cl(c, acc + (c.length || 0))); })(root, 0);
+    // height = longest path (in edges) from a node to a visible descendant tip.
+    // Cladograms position by height so every tip lands on the same outer level
+    // (dendrogram style) — visibly a cladogram, not a tree with equal lengths.
+    (function ht(n) {
+      if (n.collapsed || !n.children.length) return (n._h = 0);
+      const hs = n.children.filter((c) => !c.lost || showLoss).map(ht);
+      return (n._h = hs.length ? 1 + Math.max(...hs) : 0);
+    })(root);
+    const H = Math.max(1, root._h);
     const wrapW = $("wrap").clientWidth || 900;
     const W = Math.max(360, wrapW - 160);
-    const xstep = Math.max(26, W / (md + 1));
+    const xstep = Math.max(26, W / (H + 1));
     each(root, (n) => {
       if (layout === "phylo" && maxLen > 0) n._x = (n._cl / maxLen) * (W - 10);
-      else n._x = depthOf(n) * xstep;
+      else n._x = (H - n._h) * xstep;   // tips (h=0) align at the far edge; root (h=H) at 0
     });
     root._x = 0;
     return { ls, W, maxLen, xstep };
