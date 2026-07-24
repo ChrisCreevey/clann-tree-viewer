@@ -364,6 +364,27 @@ export function mountViewer(container, initialData) {
     if (!n.children.length) return newickName(n.name) + (n.length != null ? ":" + n.length : "");
     return "(" + n.children.filter((c) => !c.isLoss).map(toNewick).join(",") + ")" + (n.support != null ? n.support : "") + (n.length != null ? ":" + n.length : "");
   }
+  // Serialise back to Clann-style NHX, preserving events / species / losses that
+  // plain Newick would drop:  gene leaf  Name:len[&&NHX:S=Sp:D=N]
+  //                           loss leaf  Sp*LOST:len[&&NHX:S=Sp]
+  //                           dup/spec   (…)sup:len[&&NHX:D=Y|N(:S=Sp)]
+  function toNhx(n) {
+    const len = n.length != null ? ":" + n.length : "";
+    if (!n.children.length) {
+      if (n.isLoss || n.event === "loss") {
+        const tag = n.species != null ? "[&&NHX:S=" + n.species + "]" : "";
+        return newickName(n.name) + "*LOST" + len + tag;
+      }
+      return n.species != null ? newickName(n.name) + len + "[&&NHX:S=" + n.species + ":D=N]" : newickName(n.name) + len;
+    }
+    const inner = n.children.map(toNhx).join(",");           // keep loss clades, unlike toNewick
+    const parts = [];
+    if (n.species != null) parts.push("S=" + n.species);
+    if (n.event === "duplication") parts.push("D=Y");
+    else if (n.event === "speciation") parts.push("D=N");
+    const tag = parts.length ? "[&&NHX:" + parts.join(":") + "]" : "";
+    return "(" + inner + ")" + (n.support != null ? n.support : "") + len + tag;
+  }
 
   // ---------- view / zoom / pan ----------
   function applyView() { scene.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`); }
@@ -582,6 +603,12 @@ export function mountViewer(container, initialData) {
     $("expNwk").textContent = "Copied ✓";
     setTimeout(() => $("expNwk").textContent = "Copy Newick (current rooting)", 1200);
   }
+  function copyNhx() {
+    const nhx = toNhx(root) + ";";
+    if (navigator.clipboard) navigator.clipboard.writeText(nhx);
+    $("expNhx").textContent = "Copied ✓";
+    setTimeout(() => $("expNhx").textContent = "Copy NHX (current rooting)", 1200);
+  }
 
   // ---------- static control wiring (once) ----------
   $("segLayout").addEventListener("click", (e) => {
@@ -725,6 +752,7 @@ export function mountViewer(container, initialData) {
   $("expPng").onclick = exportPng;
   $("expPdf").onclick = exportPdf;
   $("expNwk").onclick = copyNewick;
+  $("expNhx").onclick = copyNhx;
 
   svg.addEventListener("wheel", onWheel, { passive: false });
   svg.addEventListener("mousedown", onDown);
@@ -751,6 +779,7 @@ export function mountViewer(container, initialData) {
     setMode(null);   // clear reroot / colour / collapse click-modes
     filtered = TREES.map((_, i) => i);
     $("rowLoss").style.display = isRecon ? "flex" : "none";
+    $("expNhx").style.display = isRecon ? "" : "none";   // NHX export only meaningful for reconciliations
     if (!isRecon) $("legend").style.display = "none";
     // Default to phylogram when the first tree has branch lengths, cladogram otherwise.
     setLayout(TREES.length && treeHasLengths(TREES[0].tree) ? "phylo" : "clado");

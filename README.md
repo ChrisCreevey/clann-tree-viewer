@@ -58,7 +58,9 @@ current tree's name beside it.
 - **Renaming:** map current tip names to new ones from a pasted or uploaded
   two-column list.
 - **Export:** SVG, PNG, PDF, and Newick of the current rooting — all generated
-  in-page with no external libraries.
+  in-page with no external libraries. Reconciliations can also **Copy NHX**,
+  preserving duplication / speciation / loss and species annotations that plain
+  Newick would drop.
 - **Multi-tree navigation:** filter and step through every tree in a file.
 
 ## Usage
