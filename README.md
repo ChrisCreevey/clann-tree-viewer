@@ -63,11 +63,14 @@ current tree's name beside it.
 
 ## Usage
 
-Open `index.html` and choose a file (button or drag-and-drop). To try it
-immediately, load a bundled example via a deep link:
+Open `index.html` and choose a file (button or drag-and-drop), or paste tree
+text straight into the window. To try it immediately, load a bundled example via
+a deep link:
 
 ```
-index.html?tree=examples/reconciled.nhx
+index.html?tree=examples/reconciled.nhx   # NHX reconciliation (8 trees)
+index.html?tree=examples/mammals.nex      # NEXUS with a translate table (2 trees)
+index.html?tree=examples/nj.nwk           # plain Newick with branch lengths
 ```
 
 The `?tree=<url>` parameter fetches and displays any same-origin tree file, which
