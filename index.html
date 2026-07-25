@@ -37,6 +37,28 @@
   "codeRepository": "https://github.com/ChrisCreevey/clann-tree-viewer"
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "How do I view a Newick tree online?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Open Clann Tree Viewer, then click Open file or drag a .nwk, .newick, or .tree file onto the window. You can also paste Newick text straight in. The tree renders instantly and stays on your machine." } },
+    { "@type": "Question", "name": "Can I open NEXUS and NHX trees too?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. It reads NEXUS (.nex/.nexus) files, resolving the TREES block and translate table, and NHX reconciliation files that carry duplication, loss, and species annotations. PHYLIP-style Newick (.ph/.phy) works as well." } },
+    { "@type": "Question", "name": "Is my data uploaded to a server?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Everything runs client-side in your browser, so your trees never leave your computer. You can save the page and use it offline, or host it yourself." } },
+    { "@type": "Question", "name": "Can it show gene duplications and losses?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. For NHX reconciliations it marks duplications, speciations, and losses at each node, shows the species mapping, and can export annotated NHX for the current rooting." } },
+    { "@type": "Question", "name": "What tree layouts are available?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Cladogram (tips aligned to show topology), phylogram (scaled to branch lengths), and radial/circular, with adjustable spacing, font size, and line thickness." } },
+    { "@type": "Question", "name": "How do I export a tree figure?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Download the tree as SVG, PNG, or PDF, or copy the current rooting as Newick or NHX. SVG and PDF are vector, so they stay crisp in papers and posters." } },
+    { "@type": "Question", "name": "Is Clann Tree Viewer free?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, it is free and open source, developed by CreeveyLab. Use it online or clone the repository and host it yourself." } }
+  ]
+}
+</script>
 <link rel="stylesheet" href="styles/viewer.css">
 </head>
 <body>
@@ -137,10 +159,43 @@
       <div class="legend" id="legend"></div>
       <div id="drop">Drop a Newick / NHX file to view</div>
       <div id="empty">
-        <h2>Clann Tree Viewer</h2>
-        <div>A free, browser-based phylogenetic tree viewer for Newick, NEXUS, and NHX files. Open a tree, drag one in, or paste it — then explore, reroot, collapse, colour, rename, and export as SVG, PNG or PDF in cladogram, phylogram, or radial layouts.<br>Everything runs locally; nothing is uploaded to a server.</div>
-        <div class="exts">.nwk · .newick · .tree · .ph · .phy · .nhx · .nex · .nexus · .txt</div>
-        <button id="emptyOpen">Open file…</button>
+        <div class="hero">
+          <h1>Clann Tree Viewer</h1>
+          <div class="lead">A free, browser-based phylogenetic tree viewer for Newick, NEXUS, and NHX files. Open a tree, drag one in, or paste it — then explore, reroot, collapse, colour, rename, and export as SVG, PNG or PDF in cladogram, phylogram, or radial layouts.<br>Everything runs locally; nothing is uploaded to a server.</div>
+          <div class="exts">.nwk · .newick · .tree · .ph · .phy · .nhx · .nex · .nexus · .txt</div>
+          <button id="emptyOpen">Open file…</button>
+          <div class="scroll-hint">↓ About &amp; FAQ</div>
+        </div>
+        <section class="about">
+          <h2>About Clann Tree Viewer</h2>
+          <p><strong>Clann Tree Viewer</strong> is a free, open-source phylogenetic tree viewer that runs entirely in your web browser. Open a <strong>Newick</strong>, <strong>NEXUS</strong>, or <strong>NHX</strong> file — or paste tree text — and explore it interactively: reroot (by hand or at the midpoint), ladderize, collapse and expand clades, colour branches, rename tips, and switch between <strong>cladogram</strong>, <strong>phylogram</strong>, and <strong>radial (circular)</strong> layouts. Export publication-ready figures as SVG, PNG, or PDF, or copy the current rooting as Newick.</p>
+          <p>Because all parsing and rendering happen locally in your browser, your trees are never uploaded to a server. The viewer also visualises <strong>gene-tree / species-tree reconciliations</strong> from the NHX files produced by <a href="https://github.com/ChrisCreevey/clann" target="_blank" rel="noopener">Clann</a>, showing <strong>duplications</strong>, <strong>speciations</strong>, and <strong>losses</strong> with per-node species mapping, and can export the annotated NHX.</p>
+
+          <h2>Frequently asked questions</h2>
+
+          <h3>How do I view a Newick tree online?</h3>
+          <p>Open Clann Tree Viewer, then click “Open file…” or drag a <code>.nwk</code>, <code>.newick</code>, or <code>.tree</code> file onto the window. You can also paste Newick text straight in. The tree renders instantly and stays on your machine.</p>
+
+          <h3>Can I open NEXUS and NHX trees too?</h3>
+          <p>Yes. It reads NEXUS (<code>.nex</code> / <code>.nexus</code>) files — resolving the TREES block and translate table — and NHX reconciliation files that carry duplication, loss, and species annotations. PHYLIP-style Newick (<code>.ph</code> / <code>.phy</code>) works as well.</p>
+
+          <h3>Is my data uploaded to a server?</h3>
+          <p>No. Everything runs client-side in your browser, so your trees never leave your computer. You can even save the page and use it offline, or host it yourself.</p>
+
+          <h3>Can it show gene duplications and losses?</h3>
+          <p>Yes. For NHX reconciliations it marks duplications, speciations, and losses at each node, shows the species mapping in tooltips, and can export the annotated NHX for the current rooting.</p>
+
+          <h3>What tree layouts are available?</h3>
+          <p>Cladogram (tips aligned to show topology only), phylogram (scaled to branch lengths with a scale bar), and radial/circular — with adjustable row spacing, font size, and branch-line thickness.</p>
+
+          <h3>How do I export a tree figure?</h3>
+          <p>Download the tree as SVG, PNG, or PDF, or copy the current rooting as Newick or NHX. SVG and PDF are vector, so they stay crisp in papers and posters.</p>
+
+          <h3>Is it free?</h3>
+          <p>Yes — Clann Tree Viewer is free and open source, developed by <a href="https://www.creeveylab.org/" target="_blank" rel="noopener">CreeveyLab</a>. Use it online or clone the <a href="https://github.com/ChrisCreevey/clann-tree-viewer" target="_blank" rel="noopener">repository</a> and host it yourself.</p>
+
+          <p class="about-foot">Developed by <a href="https://www.creeveylab.org/" target="_blank" rel="noopener">CreeveyLab</a> · <a href="https://github.com/ChrisCreevey/clann-tree-viewer" target="_blank" rel="noopener">source on GitHub</a> · companion to the <a href="https://github.com/ChrisCreevey/clann" target="_blank" rel="noopener">Clann</a> supertree program.</p>
+        </section>
       </div>
       <div class="err" id="err"></div>
     </div>
