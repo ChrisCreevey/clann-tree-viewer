@@ -65,6 +65,45 @@ window.addEventListener("paste", (e) => {
   openText(text, "pasted tree");
 });
 
+// --- draggable sidebar width (shell-level) ---
+(() => {
+  const side = document.getElementById("side");
+  const resizer = document.getElementById("sideResize");
+  if (!side || !resizer) return;
+  const MIN = 200, MAX = 620;
+  // restore a saved width
+  const saved = +localStorage.getItem("clannSideW");
+  if (saved >= MIN && saved <= MAX) side.style.width = saved + "px";
+  // re-render the tree (viewer listens for window "resize"), throttled to a frame
+  let raf = 0, dragging = false;
+  const reflow = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; window.dispatchEvent(new Event("resize")); }); };
+  resizer.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    dragging = true;
+    try { resizer.setPointerCapture(e.pointerId); } catch { /* non-pointer env */ }
+    resizer.classList.add("drag");
+    document.body.style.userSelect = "none";
+  });
+  resizer.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const w = Math.max(MIN, Math.min(MAX, e.clientX - side.getBoundingClientRect().left));
+    side.style.width = w + "px";
+    reflow();
+  });
+  const end = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    try { resizer.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    resizer.classList.remove("drag");
+    document.body.style.userSelect = "";
+    localStorage.setItem("clannSideW", parseInt(side.style.width, 10) || "");
+    reflow();
+  };
+  resizer.addEventListener("pointerup", end);
+  resizer.addEventListener("pointercancel", end);
+  resizer.addEventListener("dblclick", () => { side.style.width = ""; localStorage.removeItem("clannSideW"); reflow(); });
+})();
+
 // --- light/dark toggle (shell-level: active even before a tree is loaded) ---
 document.getElementById("themeBtn").addEventListener("click", () => {
   const r = document.documentElement;
