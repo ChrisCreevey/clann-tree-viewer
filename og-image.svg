@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="Helvetica, Arial, sans-serif">
+  <!-- palette: bg #FAF6EE, ink #1A160F, muted #6A5A43, branch #4B4031, clay #A94B2E, teal #0B7268, amber #D99A2B -->
+  <rect width="1200" height="630" fill="#FAF6EE"/>
+  <rect width="1200" height="12" fill="#A94B2E"/>
+
+  <!-- wordmark -->
+  <text x="84" y="184" font-size="58" font-weight="700" letter-spacing="1.5" fill="#A94B2E">CLANN TREE VIEWER</text>
+
+  <!-- tagline -->
+  <text x="86" y="268" font-size="40" font-weight="600" fill="#1A160F">Phylogenetic tree viewer</text>
+  <text x="86" y="322" font-size="27" font-family="Menlo, Consolas, monospace" fill="#0B7268">Newick &#183; NEXUS &#183; NHX &#8212; in your browser</text>
+
+  <!-- feature line -->
+  <text x="86" y="392" font-size="24" fill="#6A5A43">reroot &#183; collapse &#183; colour &#183; rename</text>
+  <text x="86" y="428" font-size="24" fill="#6A5A43">cladogram &#183; phylogram &#183; radial &#183; export SVG/PNG/PDF</text>
+
+  <!-- footer -->
+  <text x="86" y="556" font-size="22" fill="#8E7A5E">Free &#183; open source &#183; nothing is uploaded &#183; creeveylab.org</text>
+
+  <!-- tree illustration (aligned cladogram), right side -->
+  <g stroke-linecap="round" fill="none">
+    <!-- black clade -->
+    <g stroke="#4B4031" stroke-width="4">
+      <!-- root vertical + horizontals -->
+      <path d="M730,250 V355 M730,250 H990 M730,355 H860"/>
+      <!-- (A,B) node -->
+      <path d="M990,110 V180 M990,110 H1120 M990,180 H1120"/>
+    </g>
+    <!-- coloured clade ((C,D),(E,F)) in teal -->
+    <g stroke="#0B7268" stroke-width="4">
+      <path d="M860,285 V425 M860,285 H990 M860,425 H990"/>
+      <path d="M990,250 V320 M990,250 H1120 M990,320 H1120"/>
+      <path d="M990,390 V460 M990,390 H1120 M990,460 H1120"/>
+    </g>
+  </g>
+  <!-- node dots -->
+  <g fill="#4B4031">
+    <circle cx="730" cy="250" r="6"/>
+    <circle cx="990" cy="145" r="5"/>
+  </g>
+  <g fill="#0B7268">
+    <circle cx="860" cy="355" r="6"/>
+    <circle cx="990" cy="285" r="5"/>
+    <circle cx="990" cy="425" r="5"/>
+  </g>
+  <!-- tip dots -->
+  <g fill="#1A160F">
+    <circle cx="1120" cy="110" r="5"/><circle cx="1120" cy="180" r="5"/>
+    <circle cx="1120" cy="250" r="5"/><circle cx="1120" cy="320" r="5"/>
+    <circle cx="1120" cy="390" r="5"/><circle cx="1120" cy="460" r="5"/>
+  </g>
+</svg>
