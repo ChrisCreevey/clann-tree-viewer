@@ -1,5 +1,7 @@
 # Clann tree viewer
 
+# Use it online here: [https://chriscreevey.github.io/clann-tree-viewer/](https://chriscreevey.github.io/clann-tree-viewer/).
+
 A standalone, browser-only viewer for phylogenetic trees, including the
 **NHX** reconciliation files [Clann](https://github.com/ChrisCreevey/clann)
 produces, with their duplications, losses, and species mappings.
@@ -9,7 +11,7 @@ reroot / collapse / zoom / export entirely client-side. **Nothing is uploaded to
 a server**, so it can be hosted as a static site (e.g. GitHub Pages) or dropped
 onto any web host.
 
-You can use the deployed version to visualise trees here: [https://chriscreevey.github.io/clann-tree-viewer/](https://chriscreevey.github.io/clann-tree-viewer/).
+
 
 ## What's new
 
