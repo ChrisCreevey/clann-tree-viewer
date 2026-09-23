@@ -132,6 +132,15 @@ above are currently specific to this standalone viewer. It consumes a
 (`{ type, meta, trees:[{ name, score?, dups?, losses?, tree }] }`); the parsers'
 only job is to turn uploaded text into that shape.
 
+## Funding
+
+Part of **HoloR-Tools** from the [HoloRuminant](https://holoruminant.eu/) project. This tool was
+developed with financial support from the European Union's Horizon 2020 research and innovation
+programme under grant agreement N° 101000213-HoloRuminant.
+
+This publication reflects the views only of the author, and not the European Commission (EC); the
+EC is not liable for any use that may be made of the information contained herein.
+
 ## License
 
 See [LICENSE](LICENSE).
